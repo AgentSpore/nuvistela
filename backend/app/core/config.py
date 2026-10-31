@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     database_url: str
     port: int = 8080
+    cookie_secure: bool = True
     family_llm_model: str | None = None
     openrouter_api_key: SecretStr | None = None
     agent_request_limit: int = 10
