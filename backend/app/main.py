@@ -24,6 +24,3 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.include_router(health_router)
     return app
-
-
-app = create_app()

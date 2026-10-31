@@ -29,6 +29,13 @@ async def client(postgres_url: str) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
+async def client_db_blackholed() -> AsyncIterator[AsyncClient]:
+    blackhole = "postgresql+asyncpg://u:p@10.255.255.1:5432/none"
+    async for c in _client(create_app(Settings(database_url=blackhole))):
+        yield c
+
+
+@pytest.fixture
 async def client_db_down() -> AsyncIterator[AsyncClient]:
     dead = "postgresql+asyncpg://u:p@127.0.0.1:1/none"
     async for c in _client(create_app(Settings(database_url=dead))):
