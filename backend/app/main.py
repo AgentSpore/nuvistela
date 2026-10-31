@@ -20,7 +20,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         await engine.dispose()
 
-    app = FastAPI(title="Kinsaga", lifespan=lifespan)
+    app = FastAPI(title="Bumbli", lifespan=lifespan)
     app.state.settings = settings
     app.include_router(health_router)
     return app

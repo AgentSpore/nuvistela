@@ -695,7 +695,7 @@ wheels = [
 ]
 
 [[package]]
-name = "kinsaga-backend"
+name = "bumbli-backend"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

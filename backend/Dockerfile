@@ -5,8 +5,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY app ./app
-RUN useradd --system --uid 1001 kinsaga && mkdir /data && chown kinsaga /data
-USER kinsaga
+RUN useradd --system --uid 1001 bumbli && mkdir /data && chown bumbli /data
+USER bumbli
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
   CMD python -c "import os,urllib.request as u; u.urlopen(f'http://127.0.0.1:{os.environ[\"PORT\"]}/health', timeout=2)"
