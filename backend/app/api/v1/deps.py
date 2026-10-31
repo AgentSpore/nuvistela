@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import Cookie, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncConnection
+from starlette.datastructures import State
 
 from app.agent.deps import GameDeps
 from app.agent.errors import AgentUnavailableError
@@ -47,20 +48,24 @@ async def current_member(
 CurrentMember = Annotated[Member, Depends(current_member)]
 
 
-def get_agent_gateway(
-    request: Request, conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")]
-) -> AgentGateway:
-    """Per request: the store appends in the request transaction, so it must share `conn`."""
-    if request.app.state.agent is None:
+def build_agent_gateway(state: State, conn: AsyncConnection) -> AgentGateway:
+    """The store appends in `conn`'s transaction, so the gateway is built per transaction."""
+    if state.agent is None:
         raise AgentUnavailableError("LLM is not configured")
     families = SqlFamilyState(FamilyRepository(conn))
     runtime = GameMasterRuntime(
-        request.app.state.agent,
+        state.agent,
         lambda family_id: GameDeps(family_id=family_id, families=families),
-        request.app.state.settings,
+        state.settings,
         PostgresConversationStore(conn),
     )
     return AgentGateway(runtime)
+
+
+def get_agent_gateway(
+    request: Request, conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")]
+) -> AgentGateway:
+    return build_agent_gateway(request.app.state, conn)
 
 
 AgentGatewayDep = Annotated[AgentGateway, Depends(get_agent_gateway)]
