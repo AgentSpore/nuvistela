@@ -2,10 +2,10 @@ import asyncio
 from pathlib import Path
 
 from aiogram.types import Update
-from pydantic import SecretStr, ValidationError
+from pydantic import SecretStr
 from pydantic_ai.models.function import FunctionModel
-from pytest import raises
 
+from app.channels.telegram import set_webhook
 from app.channels.telegram.runner import UpdateRunner
 from app.core.config import Settings
 from app.main import create_app
@@ -149,12 +149,31 @@ def test_settings_default_concurrency_and_url_field() -> None:
     )
 
 
-def test_webhook_secret_must_match_telegram_charset() -> None:
-    for bad in ("has space", "", "x" * 257, "uni-é"):
-        with raises(ValidationError):
-            Settings(_env_file=None, database_url="x", telegram_webhook_secret=SecretStr(bad))
-    ok = Settings(_env_file=None, database_url="x", telegram_webhook_secret=SecretStr("a-Z_9"))
-    assert ok.telegram_webhook_secret is not None
+async def test_bad_webhook_secret_disables_telegram_but_app_starts(postgres_url, agent) -> None:
+    for bad in ("has space", "x" * 257, "uni-é"):
+        settings = Settings(
+            _env_file=None,
+            database_url=postgres_url,
+            telegram_bot_token=SecretStr("1:tok"),
+            telegram_webhook_secret=SecretStr(bad),
+        )
+        async for c in _client(create_app(settings, agent=agent)):
+            assert (await c.get("/health")).status_code == 200
+            resp = await c.post("/api/v1/telegram/webhook", json=update(1, "x"))
+            assert resp.status_code == 404
+
+
+def test_cli_rejects_a_secret_outside_the_telegram_charset(monkeypatch, capsys, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    for name, value in (
+        ("DATABASE_URL", "x"),
+        ("TELEGRAM_BOT_TOKEN", "123:secret-token"),
+        ("TELEGRAM_WEBHOOK_SECRET", "has space"),
+        ("TELEGRAM_WEBHOOK_URL", "https://x.test/hook"),
+    ):
+        monkeypatch.setenv(name, value)
+    assert set_webhook.main() == 2
+    assert capsys.readouterr().out.startswith("failure")
 
 
 def test_channels_do_not_import_the_http_layer() -> None:
@@ -168,3 +187,61 @@ async def test_message_starting_with_another_mention_still_reaches_us(tg, sender
     with agent.override(model=FunctionModel(Recorder("ok"))):
         await post_update(tg, update(2, f"@someone look, @{BOT.username} help"))
     assert [s.text for s in sender.sent] == ["ok"]
+
+
+async def test_command_followed_by_newline_is_handled(tg, sender, agent) -> None:
+    await linked(tg, sender)
+    rec = Recorder("ok")
+    with agent.override(model=FunctionModel(rec)):
+        await post_update(tg, update(2, f"/ask@{BOT.username}\nhi there"))
+        await post_update(tg, update(3, "/ask\nsecond"))
+    assert rec.prompts()[-2:] == ["hi there", "second"]
+    assert [s.text for s in sender.sent] == ["ok", "ok"]
+
+
+async def test_link_followed_by_newline_is_handled(tg, sender, db_fetch) -> None:
+    cookie, family_id = await make_member(tg)
+    code = await issue_code(tg, family_id, cookie)
+    await post_update(tg, update(1, f"/link@{BOT.username}\n{code}"))
+    assert sender.sent[-1].text == "connected"
+
+
+def units(text: str) -> int:
+    return len(text.encode("utf-16-le")) // 2
+
+
+async def test_chunks_respect_utf16_length_and_lose_nothing(tg, sender, agent) -> None:
+    await linked(tg, sender)
+    reply = "\U0001f600" * 3000
+    with agent.override(model=FunctionModel(Recorder(reply))):
+        await post_update(tg, update(2, "/ask hi"))
+    assert all(units(s.text) <= 4096 for s in sender.sent)
+    assert len(sender.sent) >= 2
+    assert "".join(s.text for s in sender.sent) == reply
+
+
+async def test_chunk_prefers_a_newline_boundary(tg, sender, agent) -> None:
+    await linked(tg, sender)
+    reply = "a" * 3000 + "\n" + "b" * 3000
+    with agent.override(model=FunctionModel(Recorder(reply))):
+        await post_update(tg, update(2, "/ask hi"))
+    assert [s.text for s in sender.sent] == ["a" * 3000 + "\n", "b" * 3000]
+
+
+async def test_blank_agent_reply_gets_fixed_fallback(tg, sender, agent) -> None:
+    await linked(tg, sender)
+    with agent.override(model=FunctionModel(Recorder("  "))):
+        await post_update(tg, update(2, "/ask hi"))
+    assert [s.text for s in sender.sent] == ["the game master had no answer, try again"]
+
+
+async def test_failing_admin_lookup_replies_try_again_and_keeps_the_code(
+    tg, sender, db_fetch
+) -> None:
+    cookie, family_id = await make_member(tg)
+    code = await issue_code(tg, family_id, cookie)
+    sender.status_fails = True
+    await link(tg, code, 1)
+    assert sender.sent[-1].text == "try again later"
+    assert await db_fetch("SELECT 1 FROM tg_chats") == []
+    assert len(await db_fetch("SELECT 1 FROM link_codes")) == 1

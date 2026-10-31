@@ -9,6 +9,7 @@ import sys
 
 from aiogram import Bot
 
+from app.channels.telegram.secret import is_valid_webhook_secret
 from app.core.config import Settings
 
 
@@ -30,6 +31,9 @@ def main() -> int:
         )
         if not (token and secret and url):
             print("failure: set TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, TELEGRAM_WEBHOOK_URL")
+            return 2
+        if not is_valid_webhook_secret(secret.get_secret_value()):
+            print("failure: TELEGRAM_WEBHOOK_SECRET must match [A-Za-z0-9_-]{1,256}")
             return 2
         asyncio.run(register(token.get_secret_value(), secret.get_secret_value(), url))
     except Exception as exc:  # noqa: BLE001 (CLI boundary: print the class, never the message)

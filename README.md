@@ -37,4 +37,5 @@ Register the webhook once, after the release is up: `python -m app.channels.tele
 Group chats:
 - Make the bot a group admin, or turn privacy off in BotFather (`/setprivacy`), so plain `@bot` mentions are delivered. With privacy on, only replies to the bot and commands reach it.
 - An adult gets a code on the site (`POST /api/v1/families/{id}/telegram/link-code`, valid 10 minutes, single use). A chat creator or admin sends `/link@<bot> <code>` in the group; in a private chat plain `/link <code>` works.
+- An admin who posts anonymously (as the group) must switch anonymity off to use `/link`: Telegram then reports the group, not the person, as the sender. A bad webhook secret format disables Telegram at startup (logged), like a bad token.
 - Ask the game master with `/ask@<bot> <question>`, by replying to the bot, or by mentioning `@<bot>`.

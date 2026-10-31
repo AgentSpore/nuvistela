@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import cast
 
 import pytest
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.methods import GetChatMember
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from pydantic import SecretStr
@@ -34,8 +36,11 @@ class FakeSender:
     def __init__(self) -> None:
         self.sent: list[Sent] = []
         self.admins: set[int] = {5}  # the default sender of `update()`
+        self.status_fails = False
 
     async def chat_member_status(self, chat_id: int, user_id: int) -> str:
+        if self.status_fails:
+            raise TelegramBadRequest(method=GetChatMember(chat_id=0, user_id=0), message="boom")
         return "administrator" if user_id in self.admins else "member"
 
     async def me(self) -> BotIdentity:

@@ -21,6 +21,7 @@ from app.api.v1.families import router as families_router
 from app.api.v1.telegram import router as telegram_router
 from app.channels.telegram.handler import TelegramHandler
 from app.channels.telegram.runner import UpdateRunner
+from app.channels.telegram.secret import is_valid_webhook_secret
 from app.channels.telegram.sender import AiogramSender, TelegramSender
 from app.core.config import Settings
 
@@ -61,6 +62,9 @@ def _build_telegram(
 ) -> TelegramRuntime | None:
     """None (route answers 404) unless the bot token and the webhook secret are both set."""
     if not (settings.telegram_bot_token and settings.telegram_webhook_secret):
+        return None
+    if not is_valid_webhook_secret(settings.telegram_webhook_secret.get_secret_value()):
+        logger.warning("Telegram webhook secret has an invalid format: starting without it")
         return None
     try:
         sender = sender or AiogramSender(Bot(settings.telegram_bot_token.get_secret_value()))

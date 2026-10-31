@@ -3,6 +3,7 @@
 import logging
 import re
 
+from aiogram.exceptions import AiogramError
 from aiogram.types import Message, Update
 from starlette.datastructures import State
 
@@ -18,6 +19,8 @@ logger = logging.getLogger(__name__)
 LINKED = "connected"
 BAD_CODE = "code invalid or expired"
 NOT_ADMIN = "only chat admins can link"
+TRY_LATER = "try again later"
+NO_ANSWER = "the game master had no answer, try again"
 EMPTY_QUESTION = "напиши вопрос после /ask"
 BUSY = "wait, I'm still answering"
 LIMIT = "daily limit reached"
@@ -50,13 +53,13 @@ class TelegramHandler:
         if message.from_user.is_bot:
             return
         bot = await self._sender.me()
-        command, _, rest = message.text.partition(" ")
+        command, rest = (message.text.split(maxsplit=1) + [""])[:2]
         name, _, target = command.partition("@") if command.startswith("/") else ("", "", "")
         if target and target.lower() != bot.username.lower():
             return  # a command for another bot
         name = name.lower()
         if name == "/link":
-            await self._link(message, rest.strip())
+            await self._link(message, rest.strip(), message.from_user.id)
         elif name == "/ask":
             await self._chat(message, rest.strip(), bot)
         else:
@@ -84,18 +87,24 @@ class TelegramHandler:
             text = re.sub(rf"{re.escape(mention)}\b", "", text, flags=re.IGNORECASE)
         return text.strip()
 
-    async def _link(self, message: Message, code: str) -> None:
-        if message.chat.type != "private" and not await self._is_admin(message):
-            await self._reply(message, NOT_ADMIN)
-            return
+    async def _link(self, message: Message, code: str, user_id: int) -> None:
+        if message.chat.type != "private":
+            try:
+                status = await self._sender.chat_member_status(message.chat.id, user_id)
+            except AiogramError as exc:
+                logger.warning(
+                    "telegram admin lookup failed: %s chat_id=%s",
+                    type(exc).__name__,
+                    message.chat.id,
+                )
+                await self._reply(message, TRY_LATER)
+                return
+            if status not in _ADMIN_STATUSES:
+                await self._reply(message, NOT_ADMIN)
+                return
         async with self._state.engine.begin() as conn:
             ok = await TelegramLinkService(LinkRepository(conn)).link_chat(message.chat.id, code)
         await self._reply(message, LINKED if ok else BAD_CODE)
-
-    async def _is_admin(self, message: Message) -> bool:
-        user = message.from_user
-        status = await self._sender.chat_member_status(message.chat.id, user.id if user else 0)
-        return status in _ADMIN_STATUSES
 
     async def _chat(self, message: Message, text: str, bot: BotIdentity) -> None:
         if not text:
@@ -129,6 +138,25 @@ class TelegramHandler:
         return f"link this chat first: {command} <code> from the site"
 
     async def _reply(self, message: Message, text: str) -> None:
-        for i in range(0, len(text), MAX_MESSAGE_CHARS):
-            reply_to = message.message_id if i == 0 else None
-            await self._sender.send(message.chat.id, text[i : i + MAX_MESSAGE_CHARS], reply_to)
+        for i, chunk in enumerate(self._chunks(text if text.strip() else NO_ANSWER)):
+            await self._sender.send(message.chat.id, chunk, message.message_id if i == 0 else None)
+
+    @staticmethod
+    def _chunks(text: str) -> list[str]:
+        """Pieces of at most 4096 UTF-16 units (Telegram's unit), cut at a newline or space."""
+        out = []
+        while text:
+            units = 0
+            for i, ch in enumerate(text):
+                units += 2 if ord(ch) > 0xFFFF else 1
+                if units > MAX_MESSAGE_CHARS:
+                    cut = i
+                    break
+            else:
+                out.append(text)
+                break
+            boundary = max(text.rfind("\n", 0, cut), text.rfind(" ", 0, cut))
+            cut = boundary + 1 if boundary > 0 else cut
+            out.append(text[:cut])
+            text = text[cut:]
+        return out

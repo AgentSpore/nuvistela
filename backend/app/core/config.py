@@ -1,10 +1,7 @@
-import re
 from typing import Self
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-_SECRET_RE = re.compile(r"[A-Za-z0-9_-]{1,256}")
 
 
 class Settings(BaseSettings):
@@ -27,14 +24,6 @@ class Settings(BaseSettings):
     telegram_webhook_secret: SecretStr | None = None
     telegram_webhook_url: str | None = None
     telegram_max_concurrent_updates: int = Field(default=8, ge=1)
-
-    @model_validator(mode="after")
-    def _secret_fits_telegram(self) -> Self:
-        # https://core.telegram.org/bots/api#setwebhook : secret_token is 1-256 of A-Z a-z 0-9 _ -
-        secret = self.telegram_webhook_secret
-        if secret is not None and not _SECRET_RE.fullmatch(secret.get_secret_value()):
-            raise ValueError("telegram_webhook_secret must match ^[A-Za-z0-9_-]{1,256}$")
-        return self
 
     @model_validator(mode="after")
     def _history_covers_request_pairs(self) -> Self:
