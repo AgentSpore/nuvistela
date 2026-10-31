@@ -4,6 +4,7 @@ from pydantic import SecretStr
 from pydantic_ai.exceptions import ModelAPIError, UsageLimitExceeded
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_ai.models.function import FunctionModel
+from pydantic_ai_harness.spend import PostgresSpendStore
 
 from app.agent.errors import AgentConfigError
 from app.core.config import Settings
@@ -169,8 +170,6 @@ async def test_startup_fails_loudly_without_llm_config(postgres_url: str) -> Non
 
 
 async def test_app_uses_the_shared_postgres_spend_store(postgres_url: str) -> None:
-    from pydantic_ai_harness.spend import PostgresSpendStore
-
     settings = Settings(
         _env_file=None,
         database_url=postgres_url,
@@ -180,4 +179,16 @@ async def test_app_uses_the_shared_postgres_spend_store(postgres_url: str) -> No
     app = create_app(settings)
     async for _ in _client(app):
         assert isinstance(app.state.spend_store, PostgresSpendStore)
+        break
+
+
+async def test_startup_does_not_need_a_reachable_database() -> None:
+    dead = "postgresql+asyncpg://u:p@127.0.0.1:1/none"
+    settings = Settings(
+        _env_file=None,
+        database_url=dead,
+        family_llm_model="vendor/model-x",
+        openrouter_api_key=SecretStr("test-key"),
+    )
+    async for _ in _client(create_app(settings)):
         break

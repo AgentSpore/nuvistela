@@ -27,8 +27,8 @@ class SeenAtResponseStart:
         await self._app(scope, receive, watching_send)
 
 
-async def test_family_is_committed_before_response_starts(postgres_url: str) -> None:
-    app = create_app(Settings(database_url=postgres_url, cookie_secure=False))
+async def test_family_is_committed_before_response_starts(postgres_url: str, agent) -> None:
+    app = create_app(Settings(database_url=postgres_url, cookie_secure=False), agent=agent)
     observer = SeenAtResponseStart(app, postgres_url, "CommitProbe")
     async with app.router.lifespan_context(app):
         async with AsyncClient(transport=ASGITransport(app=observer), base_url="http://t") as c:

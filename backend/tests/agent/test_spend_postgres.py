@@ -17,7 +17,9 @@ async def pool(postgres_url: str):
 
 
 async def test_v2_migration_creates_the_harness_tables(db_fetch) -> None:
-    rows = await db_fetch("SELECT to_regclass('spend_counters') AS c, to_regclass('spend_dedup') AS d")
+    rows = await db_fetch(
+        "SELECT to_regclass('spend_counters') AS c, to_regclass('spend_dedup') AS d"
+    )
     assert rows[0]["c"] and rows[0]["d"]
 
 
@@ -31,7 +33,10 @@ async def test_daily_budget_is_shared_between_two_workers(
         return GameMasterRuntime(agent, deps_factory, settings, MemoryConversations())
 
     one, two = worker(), worker()
-    with one.agent.override(model=TestModel()), two.agent.override(model=TestModel()):
+    with (
+        one.agent.override(model=TestModel(call_tools=[])),
+        two.agent.override(model=TestModel(call_tools=[])),
+    ):
         await one.run_turn(event)
         with pytest.raises(AgentBudgetExceededError):
             await two.run_turn(event)

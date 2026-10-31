@@ -1,3 +1,5 @@
+from functools import cache
+
 import asyncpg
 import pytest
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
@@ -7,6 +9,7 @@ from app.agent.models import AgentEvent
 from app.agent.postgres_store import PostgresConversationStore
 
 
+@cache
 def turn(n: int):
     return [
         ModelRequest(parts=[UserPromptPart(f"q{n}")]),

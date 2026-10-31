@@ -74,6 +74,10 @@ class FamilyService:
             raise NotFound("family not found")
         return await self._repo.list_members(family_id)
 
+    async def family_locale(self, family_id: UUID) -> str:
+        family = await self._repo.get_family(family_id)
+        return family.locale if family else "ru"
+
     async def reissue_invite(self, actor: Member, member_id: UUID) -> str:
         target = await self._repo.get_member(member_id)
         if target is None or target.family_id != actor.family_id:

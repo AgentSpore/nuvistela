@@ -24,3 +24,5 @@ class GameDeps:
 
     family_id: str
     families: FamilyStateReader
+    channel: str = "web"
+    kind: str = "message"

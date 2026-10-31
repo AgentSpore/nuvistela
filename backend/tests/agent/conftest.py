@@ -31,8 +31,8 @@ class MemoryConversations:
         """Naive tail slice, as a simple K2 store would do: may start mid-pair."""
         return list(self.data.get(family_id, []))[-limit:]
 
-    async def append(self, family_id: str, messages) -> None:
-        self.data.setdefault(family_id, []).extend(messages)
+    async def append(self, event: AgentEvent, messages) -> None:
+        self.data.setdefault(event.family_id, []).extend(messages)
 
 
 @pytest.fixture
