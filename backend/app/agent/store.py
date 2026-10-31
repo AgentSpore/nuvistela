@@ -9,8 +9,12 @@ from pydantic_ai.messages import ModelMessage
 class ConversationStore(Protocol):
     """Per-family message history. Implementations must use the SDK message serialization."""
 
-    async def load(self, family_id: str) -> list[ModelMessage]:
-        """Return the stored history, oldest first; empty for a new family."""
+    async def load(self, family_id: str, limit: int) -> list[ModelMessage]:
+        """Return at most `limit` newest messages, oldest first; empty for a new family.
+
+        A plain tail slice is acceptable: the runtime drops any leading messages that would
+        split a tool call from its result before sending the history to the model.
+        """
         ...
 
     async def append(self, family_id: str, messages: Sequence[ModelMessage]) -> None:

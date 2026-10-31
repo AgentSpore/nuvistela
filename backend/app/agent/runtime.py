@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelAPIError, UnexpectedModelBehavior, UsageLimitExceeded
+from pydantic_ai.messages import ModelMessage, ModelRequest, UserPromptPart
 from pydantic_ai.usage import UsageLimits
 
 from app.agent.deps import GameDeps
@@ -27,14 +28,30 @@ class GameMasterRuntime:
         self._deps_factory = deps_factory
         self._store = store
         self._timeout_s = settings.agent_timeout_s
+        self._history_limit = settings.agent_history_limit
         self._limits = UsageLimits(
             request_limit=settings.agent_request_limit,
             total_tokens_limit=settings.agent_total_tokens_limit,
         )
 
+    @staticmethod
+    def window(history: list[ModelMessage]) -> list[ModelMessage]:
+        """Drop leading messages until the history starts at a user prompt.
+
+        A tail slice can begin with a tool result or a model reply whose request was cut off;
+        providers reject such histories, so the window always starts on a user turn.
+        """
+        for i, message in enumerate(history):
+            is_user_turn = isinstance(message, ModelRequest) and any(
+                isinstance(p, UserPromptPart) for p in message.parts
+            )
+            if is_user_turn:
+                return history[i:]
+        return []
+
     async def run_turn(self, event: AgentEvent) -> AgentReply:
         """Handle one event or raise AgentBudgetExceededError / AgentUnavailableError."""
-        history = await self._store.load(event.family_id)
+        history = self.window(await self._store.load(event.family_id, self._history_limit))
         try:
             result = await self.agent.run(
                 f"[{event.kind} via {event.channel}] {event.text}",

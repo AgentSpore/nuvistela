@@ -4,9 +4,16 @@ import json
 
 import httpx2
 import pytest
-from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
+from pydantic_ai.messages import (
+    ModelRequest,
+    ModelResponse,
+    TextPart,
+    ToolCallPart,
+    UserPromptPart,
+)
 from pydantic_ai.models.function import FunctionModel
 from pydantic_ai.models.test import TestModel
+from pydantic_ai_harness.spend import InMemorySpendStore
 
 from app.agent.errors import AgentBudgetExceededError, AgentConfigError, AgentUnavailableError
 from app.agent.factory import build_game_master
@@ -50,9 +57,11 @@ async def test_request_carries_configured_model_and_zdr_routing(
     make_settings, deps_factory, event
 ) -> None:
     seen: list[dict] = []
+    headers: list[dict] = []
 
     def handler(request: httpx2.Request) -> httpx2.Response:
         seen.append(json.loads(request.content))
+        headers.append(dict(request.headers))
         return httpx2.Response(200, json=completion("Hello family"))
 
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
@@ -61,7 +70,8 @@ async def test_request_carries_configured_model_and_zdr_routing(
     (body,) = seen
     assert body["model"] == "vendor/model-x"
     assert body["provider"] == {"data_collection": "deny", "zdr": True}
-    assert "test-key" not in json.dumps(body)
+    assert headers[0]["authorization"] == "Bearer test-key"
+    assert "test-key" not in json.dumps(body)  # the key travels only in the header
 
 
 async def test_request_limit_exceeded_raises_budget_error(
@@ -163,3 +173,53 @@ async def test_family_daily_token_budget_is_per_family(make_settings, deps_facto
         with pytest.raises(AgentBudgetExceededError):
             await rt.run_turn(event)
         await rt.run_turn(dataclasses.replace(event, family_id="fam-2"))
+
+
+async def test_long_history_is_windowed_and_turn_still_succeeds(
+    make_settings, deps_factory, conversations, event
+) -> None:
+    chatter = "word " * 100
+    for _ in range(200):
+        conversations.data.setdefault("fam-1", []).extend(
+            [
+                ModelRequest(parts=[UserPromptPart(chatter)]),
+                ModelResponse(parts=[TextPart(chatter)]),
+            ]
+        )
+    seen: list[list] = []
+
+    def echo(messages, info):
+        seen.append(list(messages))
+        return ModelResponse(parts=[TextPart("hi")])
+
+    # 41 is odd: a naive tail slice starts on a response, which the runtime must repair
+    rt = runtime(make_settings(agent_history_limit=41), deps_factory, store=conversations)
+    with rt.agent.override(model=FunctionModel(echo)):
+        reply = await rt.run_turn(event)
+    assert reply.text == "hi"
+    first = seen[0][0]
+    assert isinstance(first, ModelRequest)
+    assert any(isinstance(p, UserPromptPart) for p in first.parts)
+    assert len(seen[0]) <= 42
+
+
+async def test_spend_store_is_shared_between_agents(make_settings, deps_factory, event) -> None:
+    store = InMemorySpendStore()
+    settings = make_settings(agent_family_daily_tokens=1)
+    plain = FunctionModel(lambda m, i: ModelResponse(parts=[TextPart("hi")]))
+    first = GameMasterRuntime(
+        build_game_master(settings, spend_store=store),
+        deps_factory,
+        settings,
+        MemoryConversations(),
+    )
+    second = GameMasterRuntime(
+        build_game_master(settings, spend_store=store),
+        deps_factory,
+        settings,
+        MemoryConversations(),
+    )
+    with first.agent.override(model=plain), second.agent.override(model=plain):
+        await first.run_turn(event)  # spends the whole budget
+        with pytest.raises(AgentBudgetExceededError):
+            await second.run_turn(event)

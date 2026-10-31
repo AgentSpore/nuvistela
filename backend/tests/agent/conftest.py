@@ -27,8 +27,9 @@ class MemoryConversations:
 
     data: dict[str, list[ModelMessage]] = field(default_factory=dict)
 
-    async def load(self, family_id: str) -> list[ModelMessage]:
-        return list(self.data.get(family_id, []))
+    async def load(self, family_id: str, limit: int) -> list[ModelMessage]:
+        """Naive tail slice, as a simple K2 store would do: may start mid-pair."""
+        return list(self.data.get(family_id, []))[-limit:]
 
     async def append(self, family_id: str, messages) -> None:
         self.data.setdefault(family_id, []).extend(messages)

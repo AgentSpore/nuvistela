@@ -29,7 +29,8 @@ def build_game_master(
     """Create the agent from settings.
 
     `http_client` lets tests capture the outgoing request. `spend_store` is the shared store of
-    the per-family daily token budget; the default in-memory store is per process only.
+    the per-family daily token budget; the default in-memory store is per process only. The
+    "day" window follows UTC (harness clock), not the family's timezone: a K2 decision.
     """
     if not settings.family_llm_model or settings.openrouter_api_key is None:
         raise AgentConfigError("FAMILY_LLM_MODEL and OPENROUTER_API_KEY must be set")
