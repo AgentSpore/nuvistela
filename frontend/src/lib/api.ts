@@ -4,7 +4,7 @@ import { API_URL } from "@/lib/config";
 export const AGE_BANDS = ["3-5", "6-9", "10-13", "14-17", "adult"] as const;
 export const ROLES = ["adult", "child"] as const;
 
-export const memberSchema = z.object({
+export const memberResponseSchema = z.object({
   id: z.string(),
   family_id: z.string(),
   display_name: z.string(),
@@ -12,16 +12,13 @@ export const memberSchema = z.object({
   role: z.enum(ROLES),
   interests: z.array(z.string()),
 });
-const inviteSchema = z.object({ member: memberSchema, invite_url: z.string() });
+const inviteSchema = z.object({ member: memberResponseSchema, invite_url: z.string() });
 const createdSchema = inviteSchema.extend({ family_id: z.string() });
 const reissueSchema = z.object({ invite_url: z.string() });
 const replySchema = z.object({ reply: z.string() });
 
-export type Member = z.infer<typeof memberSchema>;
-export type AgeBand = (typeof AGE_BANDS)[number];
-export type Role = (typeof ROLES)[number];
+export type Member = z.infer<typeof memberResponseSchema>;
 export type Invite = z.infer<typeof inviteSchema>;
-export type FamilyCreated = z.infer<typeof createdSchema>;
 export type FamilyInput = {
   title: string;
   locale: string;
@@ -65,8 +62,9 @@ const post = (body?: unknown): RequestInit => ({
   body: body === undefined ? undefined : JSON.stringify(body),
 });
 
-/** Backend returns invite paths relative to its own origin. */
-export const absoluteInvite = (path: string): string => new URL(path, API_URL).href;
+/** The backend returns a root-relative invite path; the shareable link is on the page's origin. */
+export const absoluteInvite = (path: string): string =>
+  new URL(path, window.location.origin).href;
 
 export const createFamily = (input: FamilyInput) =>
   request("/families", createdSchema, post(input));
@@ -74,7 +72,9 @@ export const addMember = (familyId: string, input: MemberInput) =>
   request(`/families/${familyId}/members`, inviteSchema, post(input));
 export const reissueInvite = (memberId: string) =>
   request(`/members/${memberId}/invite`, reissueSchema, post());
-export const getMe = () => request("/me", memberSchema);
+export const listMembers = (familyId: string) =>
+  request(`/families/${familyId}/members`, z.array(memberResponseSchema));
+export const getMe = () => request("/me", memberResponseSchema);
 export const sendAgentMessage = (text: string) =>
   request("/agent/messages", replySchema, post({ text }));
 

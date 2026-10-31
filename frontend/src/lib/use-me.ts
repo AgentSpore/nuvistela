@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { ApiError, getMe, type Member } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { ApiError, getMe, listMembers, type Member } from "@/lib/api";
 
 export type MeState =
   | { status: "loading" }
@@ -32,4 +32,15 @@ export function errorKey(
   if (e.status === 401) return "unauthorized";
   if (e.status === 403) return "forbidden";
   return "generic";
+}
+
+/** Family roster from the API; `reload` refetches after a member is added. */
+export function useMembers(familyId: string): { members: Member[]; reload: () => void } {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    listMembers(familyId).then(setMembers, () => setMembers([]));
+  }, [familyId, tick]);
+  const reload = useCallback(() => setTick((n) => n + 1), []);
+  return { members, reload };
 }

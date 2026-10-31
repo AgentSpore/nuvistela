@@ -1,11 +1,11 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { absoluteInvite, reissueInvite, type Member } from "@/lib/api";
-import { familyRoster } from "@/lib/roster";
-import { errorKey, useMe } from "@/lib/use-me";
+import { absoluteInvite, reissueInvite, type Invite, type Member } from "@/lib/api";
+import { errorKey, useMe, useMembers } from "@/lib/use-me";
 import { Gate } from "@/components/gate";
-import { InviteLink } from "@/components/invite-link";
+import { InviteLink, toLink, type Link } from "@/components/invite-link";
+import { MemberForm } from "@/components/member-form";
 import { btnGhostCls, cardCls } from "@/components/styles";
 
 function MemberRow({ member, canReissue }: { member: Member; canReissue: boolean }) {
@@ -35,9 +35,13 @@ function MemberRow({ member, canReissue }: { member: Member; canReissue: boolean
           </p>
         </div>
         {canReissue && (
-          <button type="button" onClick={reissue} className={btnGhostCls}>
+          <button
+            type="button"
+            onClick={reissue}
+            aria-label={t("reissueFor", { name: member.display_name })}
+            className={btnGhostCls}
+          >
             {t("reissue")}
-            <span className="sr-only"> {member.display_name}</span>
           </button>
         )}
       </div>
@@ -56,23 +60,45 @@ function MemberRow({ member, canReissue }: { member: Member; canReissue: boolean
   );
 }
 
-export function FamilyView() {
+function Roster({ me }: { me: Member }) {
   const t = useTranslations("family");
-  const me = useMe();
+  const { members, reload } = useMembers(me.family_id);
+  const [links, setLinks] = useState<Link[]>([]);
+  const added = (invite: Invite) => {
+    setLinks((l) => [...l, toLink(invite)]);
+    reload();
+  };
   return (
-    <Gate state={me}>
-      {(m) => (
-        <section aria-labelledby="fam-h" className="flex flex-col gap-4">
-          <h1 id="fam-h" className="text-2xl font-bold">
-            {t("title")}
-          </h1>
-          <ul className="flex flex-col gap-3">
-            {familyRoster(m).map((x) => (
-              <MemberRow key={x.id} member={x} canReissue={m.role === "adult"} />
-            ))}
-          </ul>
-        </section>
+    <section aria-labelledby="fam-h" className="flex flex-col gap-4">
+      <h1 id="fam-h" className="text-2xl font-bold">
+        {t("title")}
+      </h1>
+      <ul className="flex flex-col gap-3">
+        {members.map((x) => (
+          <MemberRow
+            key={x.id}
+            member={x}
+            canReissue={me.role === "adult" && x.id !== me.id}
+          />
+        ))}
+      </ul>
+      {me.role === "adult" && (
+        <div className={cardCls}>
+          {links.length > 0 && (
+            <ul className="mb-4 flex flex-col gap-4">
+              {links.map((l) => (
+                <InviteLink key={l.id} name={l.name} url={l.url} />
+              ))}
+            </ul>
+          )}
+          <MemberForm familyId={me.family_id} onAdded={added} />
+        </div>
       )}
-    </Gate>
+    </section>
   );
+}
+
+export function FamilyView() {
+  const me = useMe();
+  return <Gate state={me}>{(m) => <Roster me={m} />}</Gate>;
 }

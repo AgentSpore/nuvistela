@@ -1,13 +1,20 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
-import { addMember, AGE_BANDS, absoluteInvite, ROLES, type Invite } from "@/lib/api";
-import { check, memberSchema, parseInterests, type FieldErrors } from "@/lib/forms";
+import { addMember, AGE_BANDS, ROLES, type Invite } from "@/lib/api";
+import { check, memberInputSchema, parseInterests, type FieldErrors } from "@/lib/forms";
 import { errorKey } from "@/lib/use-me";
-import { SelectField, TextField } from "@/components/fields";
+import { focusFirstError, SelectField, TextField } from "@/components/fields";
 import { btnCls } from "@/components/styles";
 
-type Props = { familyId: string; onAdded: (invite: Invite & { url: string }) => void };
+type Props = { familyId: string; onAdded: (invite: Invite) => void };
+
+const FIELD_IDS = {
+  display_name: "m-name",
+  age_band: "m-band",
+  role: "m-role",
+  interests: "m-interests",
+};
 
 export function MemberForm({ familyId, onAdded }: Props) {
   const t = useTranslations("member");
@@ -25,19 +32,19 @@ export function MemberForm({ familyId, onAdded }: Props) {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const r = check(memberSchema, {
+    const r = check(memberInputSchema, {
       display_name: v.name,
       age_band: v.band,
       role: v.role,
       interests: parseInterests(v.interests),
     });
     setErrors(r.ok ? {} : r.errors);
-    if (!r.ok) return;
+    if (!r.ok) return focusFirstError(r.errors, FIELD_IDS);
     setBusy(true);
     setFailure(null);
     try {
       const invite = await addMember(familyId, r.data);
-      onAdded({ ...invite, url: absoluteInvite(invite.invite_url) });
+      onAdded(invite);
       setV({ name: "", band: "6-9", role: "child", interests: "" });
     } catch (err) {
       setFailure(te(errorKey(err)));

@@ -12,7 +12,7 @@ export const familySchema = z.object({
   interests,
 });
 
-export const memberSchema = z
+export const memberInputSchema = z
   .object({
     display_name: name,
     age_band: z.enum(AGE_BANDS),

@@ -79,3 +79,13 @@ export function SelectField({ value, onChange, options, ...f }: SelectProps) {
     </Wrap>
   );
 }
+
+/** Moves focus to the field of the first error so keyboard and screen-reader users land on it. */
+export function focusFirstError(
+  errors: Record<string, string>,
+  ids: Record<string, string>,
+): void {
+  const key = Object.keys(errors)[0];
+  if (key !== undefined && ids[key] !== undefined)
+    document.getElementById(ids[key])?.focus();
+}

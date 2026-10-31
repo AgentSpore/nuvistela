@@ -38,7 +38,8 @@
   "invite": {
     "linkFor": "Sign-in link for {name}",
     "copy": "Copy",
-    "copied": "Copied"
+    "copied": "Copied",
+    "copyFailed": "Could not copy, select the link manually"
   },
   "member": {
     "heading": "Add a member",
@@ -81,11 +82,14 @@
     "note": {
       "soon": "The game master is coming soon. Nobody has read your message yet.",
       "failed": "Could not send the message. Please try again."
-    }
+    },
+    "you": "You",
+    "agent": "Game master"
   },
   "family": {
     "title": "Family",
     "reissue": "New link",
-    "reissued": "The previous link no longer works."
+    "reissued": "The previous link no longer works.",
+    "reissueFor": "New link for {name}"
   }
 }

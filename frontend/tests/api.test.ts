@@ -4,6 +4,7 @@ import {
   ApiError,
   getMe,
   isAgentMissing,
+  listMembers,
   sendAgentMessage,
   createFamily,
 } from "@/lib/api";
@@ -73,9 +74,16 @@ describe("api client", () => {
     );
   });
 
-  it("resolves relative invite paths against the API origin", () => {
+  it("resolves invite paths against the page origin, not API_URL", () => {
     expect(absoluteInvite("/api/v1/invite/abc")).toBe(
-      "http://localhost:8080/api/v1/invite/abc",
+      `${window.location.origin}/api/v1/invite/abc`,
     );
+  });
+
+  it("lists family members", async () => {
+    const fetchMock = reply(200, [member]);
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await listMembers("f1")).toEqual([member]);
+    expect(fetchMock.mock.calls[0]?.[0]).toMatch(/\/families\/f1\/members$/);
   });
 });

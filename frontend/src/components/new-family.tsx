@@ -1,16 +1,15 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
-import { absoluteInvite, createFamily, type Invite } from "@/lib/api";
+import { createFamily, type Invite } from "@/lib/api";
 import { check, familySchema, parseInterests, type FieldErrors } from "@/lib/forms";
-import { rememberMembers } from "@/lib/roster";
 import { errorKey } from "@/lib/use-me";
-import { TextField } from "@/components/fields";
-import { InviteLink } from "@/components/invite-link";
+import { focusFirstError, TextField } from "@/components/fields";
+import { InviteLink, toLink, type Link } from "@/components/invite-link";
 import { MemberForm } from "@/components/member-form";
 import { btnCls, cardCls } from "@/components/styles";
 
-type Link = { id: string; name: string; url: string };
+const FIELD_IDS = { title: "f-title", display_name: "f-name", interests: "f-interests" };
 
 export function NewFamily() {
   const t = useTranslations("new");
@@ -23,16 +22,7 @@ export function NewFamily() {
   const [familyId, setFamilyId] = useState<string | null>(null);
   const [links, setLinks] = useState<Link[]>([]);
   const set = (k: keyof typeof v) => (val: string) => setV((p) => ({ ...p, [k]: val }));
-
-  function added(invite: Invite): void {
-    rememberMembers([invite.member]);
-    const link = {
-      id: invite.member.id,
-      name: invite.member.display_name,
-      url: absoluteInvite(invite.invite_url),
-    };
-    setLinks((l) => [...l, link]);
-  }
+  const added = (invite: Invite) => setLinks((l) => [...l, toLink(invite)]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -42,13 +32,13 @@ export function NewFamily() {
       interests: parseInterests(v.interests),
     });
     setErrors(r.ok ? {} : r.errors);
-    if (!r.ok) return;
+    if (!r.ok) return focusFirstError(r.errors, FIELD_IDS);
     setBusy(true);
     setFailure(null);
     try {
       const created = await createFamily({ ...r.data, locale });
-      setFamilyId(created.family_id);
       added(created);
+      setFamilyId(created.family_id);
     } catch (err) {
       setFailure(te(errorKey(err)));
     }
@@ -58,6 +48,11 @@ export function NewFamily() {
   const err = (k: string) => (errors[k] ? te(errors[k]) : undefined);
   return (
     <div className="flex flex-col gap-6">
+      {failure && (
+        <p role="alert" className="font-medium text-danger">
+          {failure}
+        </p>
+      )}
       {familyId === null ? (
         <form onSubmit={submit} noValidate className={`${cardCls} flex flex-col gap-4`}>
           <TextField
@@ -84,11 +79,6 @@ export function NewFamily() {
             onChange={set("interests")}
             error={err("interests")}
           />
-          {failure && (
-            <p role="alert" className="font-medium text-danger">
-              {failure}
-            </p>
-          )}
           <button type="submit" disabled={busy} className={btnCls}>
             {t("submit")}
           </button>

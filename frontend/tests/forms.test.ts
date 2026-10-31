@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { check, familySchema, memberSchema, parseInterests } from "@/lib/forms";
+import { check, familySchema, memberInputSchema, parseInterests } from "@/lib/forms";
 
 describe("parseInterests", () => {
   it("splits on commas, trims, drops blanks", () => {
@@ -29,16 +29,16 @@ describe("family form", () => {
 describe("member form", () => {
   const base = { display_name: "Kid", interests: [] };
   it("rejects adult role with child band", () => {
-    const r = check(memberSchema, { ...base, age_band: "6-9", role: "adult" });
+    const r = check(memberInputSchema, { ...base, age_band: "6-9", role: "adult" });
     expect(r).toEqual({ ok: false, errors: { role: "roleMismatch" } });
   });
   it("rejects child role with adult band", () => {
-    expect(check(memberSchema, { ...base, age_band: "adult", role: "child" }).ok).toBe(
-      false,
-    );
+    expect(
+      check(memberInputSchema, { ...base, age_band: "adult", role: "child" }).ok,
+    ).toBe(false);
   });
   it("accepts child 6-9", () => {
-    expect(check(memberSchema, { ...base, age_band: "6-9", role: "child" }).ok).toBe(
+    expect(check(memberInputSchema, { ...base, age_band: "6-9", role: "child" }).ok).toBe(
       true,
     );
   });
