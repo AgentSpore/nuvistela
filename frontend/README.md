@@ -11,7 +11,8 @@ pnpm tsc --noEmit && pnpm lint && pnpm test
 pnpm build
 ```
 
-`NEXT_PUBLIC_API_URL` sets the API base URL (default `http://localhost:8080/api/v1`, see `.env.example`).
+`NEXT_PUBLIC_API_URL` sets the API base URL (default relative `/api/v1`, so the browser stays on one origin).
+`API_ORIGIN` (e.g. `http://localhost:8080`) makes Next rewrite `/api/*` to the backend; set it for `pnpm dev` and `pnpm build`. See `.env.example`.
 
 ## Docker
 
@@ -20,4 +21,4 @@ docker build -t bumbli-frontend .
 docker run --rm -p 3000:3000 bumbli-frontend   # PORT env overrides 3000
 ```
 
-`NEXT_PUBLIC_API_URL` is inlined at build time: pass `--build-arg NEXT_PUBLIC_API_URL=...`.
+`NEXT_PUBLIC_API_URL` and `API_ORIGIN` are inlined at build time: pass `--build-arg`. Without `API_ORIGIN` the image expects a reverse proxy to serve `/api` (the real deploy in K5 uses Caddy); `docker compose` passes `API_ORIGIN=http://backend:8080`.

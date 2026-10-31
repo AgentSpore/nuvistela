@@ -7,7 +7,8 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
     environment: "jsdom",
-    include: ["tests/**/*.test.tsx"],
+    server: { deps: { inline: ["next-intl"] } },
+    include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: ["tests/setup.ts"],
   },
 });
