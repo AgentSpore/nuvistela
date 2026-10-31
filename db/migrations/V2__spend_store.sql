@@ -17,3 +17,7 @@ CREATE TABLE spend_dedup (
     expires_at    timestamptz NOT NULL
 );
 CREATE INDEX spend_dedup_expiry ON spend_dedup (expires_at);
+
+-- Strict per-family order of agent messages: created_at ties inside one transaction.
+ALTER TABLE agent_messages ADD COLUMN seq bigint GENERATED ALWAYS AS IDENTITY;
+CREATE INDEX agent_messages_family_seq_idx ON agent_messages (family_id, seq);

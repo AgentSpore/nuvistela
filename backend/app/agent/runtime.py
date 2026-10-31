@@ -1,10 +1,16 @@
 """Entrypoint `run_turn`: one event in, one reply out, with limits and typed failures."""
 
 import dataclasses
+import logging
 from collections.abc import Callable
 
 from pydantic_ai import Agent
-from pydantic_ai.exceptions import ModelAPIError, UnexpectedModelBehavior, UsageLimitExceeded
+from pydantic_ai.exceptions import (
+    ModelAPIError,
+    ModelHTTPError,
+    UnexpectedModelBehavior,
+    UsageLimitExceeded,
+)
 from pydantic_ai.messages import ModelMessage, ModelRequest, UserPromptPart
 from pydantic_ai.usage import UsageLimits
 
@@ -13,6 +19,8 @@ from app.agent.errors import AgentBudgetExceededError, AgentUnavailableError
 from app.agent.models import AgentEvent, AgentReply
 from app.agent.store import ConversationStore
 from app.core.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class GameMasterRuntime:
@@ -50,6 +58,12 @@ class GameMasterRuntime:
                 return history[i:]
         return []
 
+    @staticmethod
+    def _log_failure(exc: Exception) -> None:
+        """Class and HTTP status only: provider bodies and keys never reach the log."""
+        status = exc.status_code if isinstance(exc, ModelHTTPError) else None
+        logger.warning("agent turn failed: %s status=%s", type(exc).__name__, status)
+
     async def run_turn(self, event: AgentEvent) -> AgentReply:
         """Handle one event or raise AgentBudgetExceededError / AgentUnavailableError."""
         history = self.window(await self._store.load(event.family_id, self._history_limit))
@@ -65,10 +79,13 @@ class GameMasterRuntime:
                 timeout=self._timeout_s,
             )
         except UsageLimitExceeded as exc:  # includes harness SpendLimitExceeded
+            self._log_failure(exc)
             raise AgentBudgetExceededError(str(exc)) from exc
         except TimeoutError as exc:
+            self._log_failure(exc)
             raise AgentUnavailableError("LLM call timed out") from exc
         except (ModelAPIError, UnexpectedModelBehavior) as exc:
+            self._log_failure(exc)
             raise AgentUnavailableError("LLM call failed") from exc
         await self._store.append(event, result.new_messages())
         return AgentReply(text=result.output)

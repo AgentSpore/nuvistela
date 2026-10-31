@@ -9,6 +9,8 @@ class Settings(BaseSettings):
 
     database_url: str
     port: int = 8080
+    db_pool_size: int = Field(default=5, ge=1)
+    db_max_overflow: int = Field(default=10, ge=0)
     cookie_secure: bool = True
     family_llm_model: str | None = None
     openrouter_api_key: SecretStr | None = None

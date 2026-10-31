@@ -5,6 +5,7 @@ from fastapi import Cookie, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.agent.deps import GameDeps
+from app.agent.errors import AgentUnavailableError
 from app.agent.postgres_store import PostgresConversationStore
 from app.agent.runtime import GameMasterRuntime
 from app.domain.errors import Unauthorized
@@ -50,6 +51,8 @@ def get_agent_gateway(
     request: Request, conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")]
 ) -> AgentGateway:
     """Per request: the store appends in the request transaction, so it must share `conn`."""
+    if request.app.state.agent is None:
+        raise AgentUnavailableError("LLM is not configured")
     families = SqlFamilyState(FamilyRepository(conn))
     runtime = GameMasterRuntime(
         request.app.state.agent,

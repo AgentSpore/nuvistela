@@ -2,7 +2,13 @@ from functools import cache
 
 import asyncpg
 import pytest
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
+from pydantic_ai.messages import (
+    ModelRequest,
+    ModelResponse,
+    TextPart,
+    ToolReturnPart,
+    UserPromptPart,
+)
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.agent.models import AgentEvent
@@ -85,3 +91,37 @@ async def test_rows_carry_role_channel_member(engine, family_id, db_fetch) -> No
         family_id[0],
     )
     assert [(r["role"], r["channel"]) for r in rows] == [("user", "web"), ("agent", "web")]
+
+
+async def test_rows_are_ordered_by_a_monotonic_seq(engine, family_id, db_fetch) -> None:
+    async with engine.begin() as conn:
+        store = PostgresConversationStore(conn)
+        await store.append(ev(family_id[0]), turn(1) + turn(2))
+    rows = await db_fetch(
+        "SELECT seq, content->>'kind' AS kind FROM agent_messages WHERE family_id = $1::uuid"
+        " ORDER BY seq",
+        family_id[0],
+    )
+    assert [r["kind"] for r in rows] == ["request", "response", "request", "response"]
+    assert [r["seq"] for r in rows] == sorted(r["seq"] for r in rows)
+
+
+async def test_tool_return_requests_are_stored_as_system_without_member(
+    engine, family_id, db_fetch
+) -> None:
+    tool_return = ModelRequest(parts=[ToolReturnPart("t", "r", tool_call_id="c1")])
+    member = await db_fetch(
+        "INSERT INTO members (family_id, display_name, age_band, role)"
+        " VALUES ($1::uuid, 'm', 'adult', 'adult') RETURNING id",
+        family_id[0],
+    )
+    event = AgentEvent(family_id[0], "web", "message", "x", member_id=str(member[0]["id"]))
+    async with engine.begin() as conn:
+        await PostgresConversationStore(conn).append(event, [*turn(1)[:1], tool_return])
+    rows = await db_fetch(
+        "SELECT role, member_id FROM agent_messages WHERE family_id = $1::uuid ORDER BY seq",
+        family_id[0],
+    )
+    assert [r["role"] for r in rows] == ["user", "system"]
+    assert rows[0]["member_id"] is not None
+    assert rows[1]["member_id"] is None

@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api/v1")
 async def post_message(
     body: AgentMessageRequest, member: CurrentMember, gateway: AgentGatewayDep, request: Request
 ) -> AgentMessageResponse:
+    # Body size before parsing is not limited here: K5 sets Caddy `request_body max_size`.
     limit = request.app.state.settings.agent_max_text_chars
     if len(body.text) > limit:
         raise RequestValidationError(

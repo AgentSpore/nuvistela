@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -8,12 +9,26 @@ from pydantic_ai_harness.spend import PostgresSpendStore
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.agent.deps import GameDeps
+from app.agent.errors import AgentConfigError
 from app.agent.factory import build_game_master
 from app.api.errors import register_error_handlers
 from app.api.health import router as health_router
 from app.api.v1.agent import router as agent_router
 from app.api.v1.families import router as families_router
 from app.core.config import Settings
+
+logger = logging.getLogger(__name__)
+
+
+def _build_or_degrade(
+    settings: Settings, spend_store: PostgresSpendStore | None
+) -> Agent[GameDeps, str] | None:
+    """Build the game master; without LLM settings start degraded (agent None, 503 on turns)."""
+    try:
+        return build_game_master(settings, spend_store=spend_store)
+    except AgentConfigError:
+        logger.warning("LLM is not configured: starting without the game master")
+        return None
 
 
 def create_app(
@@ -24,10 +39,23 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        connect_args = {"timeout": 3}
         engine = create_async_engine(
-            settings.database_url, pool_pre_ping=True, connect_args={"timeout": 3}
+            settings.database_url,
+            pool_pre_ping=True,
+            connect_args=connect_args,
+            pool_size=settings.db_pool_size,
+            max_overflow=settings.db_max_overflow,
+        )
+        # Own pool for /health: turns holding every pooled connection must not fail liveness.
+        health_engine = create_async_engine(
+            settings.database_url,
+            connect_args=connect_args,
+            pool_size=1,
+            max_overflow=0,
         )
         app.state.engine = engine
+        app.state.health_engine = health_engine
         pool = None
         app.state.spend_store = None
         if agent is None:
@@ -38,14 +66,12 @@ def create_app(
             )
             app.state.spend_store = PostgresSpendStore(pool)
         try:
-            # Fails startup with AgentConfigError when the LLM settings are missing.
-            app.state.agent = agent or build_game_master(
-                settings, spend_store=app.state.spend_store
-            )
+            app.state.agent = agent or _build_or_degrade(settings, app.state.spend_store)
             yield
         finally:
             if pool is not None:
                 await pool.close()
+            await health_engine.dispose()
             await engine.dispose()
 
     app = FastAPI(title="Bumbli", lifespan=lifespan)
