@@ -308,6 +308,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "httpx2" },
+    { name = "pydantic-ai-harness" },
     { name = "pydantic-ai-slim", extra = ["openrouter"] },
     { name = "pydantic-settings" },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -330,6 +331,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.162.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "httpx2", specifier = ">=2.16.0" },
+    { name = "pydantic-ai-harness", specifier = ">=0.64.0" },
     { name = "pydantic-ai-slim", extras = ["openrouter"], specifier = ">=2.64.0" },
     { name = "pydantic-settings", specifier = ">=2.16.2" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2,<3" },
@@ -1247,6 +1249,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/53/ef/fc4f868f4e2cee79f863883abffceff107875f569b848507319842d2a681/pydantic-2.13.5.tar.gz", hash = "sha256:51a9c5f7b2f8e636f04c6cada605d9b6a3bf1348fdf945a3d8869b19bba0ee08", size = 845750, upload-time = "2026-08-28T14:04:00.916Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/47/c95ffc2009878c7aac0c5e08528022dcb885933252a88b5f170058014464/pydantic-2.13.5-py3-none-any.whl", hash = "sha256:346a034f080da3755d8e9cb5e00e8b07de1d39e4f6e2c87d8ab7cafa0b269a73", size = 472589, upload-time = "2026-08-28T14:03:59.136Z" },
+]
+
+[[package]]
+name = "pydantic-ai-harness"
+version = "0.64.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "genai-prices", version = "0.1.13", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.15'" },
+    { name = "genai-prices", version = "0.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.15'" },
+    { name = "httpx" },
+    { name = "pydantic-ai-slim" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/25/31/0a3bac1221446c2cd131201f4c6f990b8ddb0fcaa4e4f02751522ac4e652/pydantic_ai_harness-0.64.0.tar.gz", hash = "sha256:8e79db35cfed2940db468644f04da2b8dc0862e0fd2544ee72c3cf65dbf5b8a5", size = 1437166, upload-time = "2026-10-31T00:22:37.399Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e9/93/c028862cc71391ad5f3befe1d1979ea4dec271b686cea72a22f432c81e99/pydantic_ai_harness-0.64.0-py3-none-any.whl", hash = "sha256:cb4f5c592c08975433adf58bfaf52671e51705d5c41c5db42f31788f934d44f2", size = 1754157, upload-time = "2026-10-31T00:22:21.974Z" },
 ]
 
 [[package]]

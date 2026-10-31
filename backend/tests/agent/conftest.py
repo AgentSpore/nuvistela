@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 from pydantic import SecretStr
+from pydantic_ai.messages import ModelMessage
 
 from app.agent.deps import FamilyStateView, GameDeps
 from app.agent.models import AgentEvent
@@ -18,6 +19,24 @@ class StubFamilies:
     async def get_state(self, family_id: str) -> FamilyStateView:
         self.calls.append(family_id)
         return FamilyStateView(family_title="The Ivanovs", member_names=("Anya", "Boris"))
+
+
+@dataclass
+class MemoryConversations:
+    """In-test ConversationStore: a dict of per-family message lists."""
+
+    data: dict[str, list[ModelMessage]] = field(default_factory=dict)
+
+    async def load(self, family_id: str) -> list[ModelMessage]:
+        return list(self.data.get(family_id, []))
+
+    async def append(self, family_id: str, messages) -> None:
+        self.data.setdefault(family_id, []).extend(messages)
+
+
+@pytest.fixture
+def conversations() -> MemoryConversations:
+    return MemoryConversations()
 
 
 @pytest.fixture

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     openrouter_api_key: SecretStr | None = None
     agent_request_limit: int = 10
     agent_total_tokens_limit: int = 30_000
+    agent_family_daily_tokens: int = 200_000
     agent_timeout_s: float = 60.0
     telegram_bot_token: str | None = None
     telegram_webhook_secret: str | None = None
