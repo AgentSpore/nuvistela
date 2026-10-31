@@ -36,4 +36,11 @@ jobs:
             echo "${want%%:*} -> $code"
             [ "$code" = "${want##*:}" ] || exit 1
           done
+      - name: Smoke loopback HOSTNAME is refused at boot
+        run: |
+          rc=0
+          HOSTNAME=127.0.0.1 PORT=3001 timeout 20 node .next/standalone/server.js > guard.log 2>&1 || rc=$?
+          cat guard.log
+          [ "$rc" -ne 0 ] && [ "$rc" -ne 124 ] || { echo "server did not exit non-zero (rc=$rc)"; exit 1; }
+          grep -q "HOSTNAME=127.0.0.1 makes every default-locale page redirect" guard.log
       - run: pnpm test
