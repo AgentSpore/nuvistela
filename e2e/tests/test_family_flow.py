@@ -3,13 +3,14 @@
 The tests share one family and run in file order (each builds on the previous one).
 """
 
+import re
 from collections.abc import Callable
 from typing import Any
 
 import httpx
 from playwright.sync_api import Page, expect
 
-from replies import REPLY
+from replies import ECHO, REPLY
 from stack import Stack
 
 Shot = Callable[[Page, str], None]
@@ -92,8 +93,11 @@ def test_message_gets_game_master_reply(new_page: NewPage, shot: Shot) -> None:
     page.get_by_label("Сообщение ведущему").fill("Hello, game master!")
     page.get_by_role("button", name="Отправить").click()
     log = page.get_by_role("log")
-    expect(log.get_by_text(REPLY)).to_be_visible()
-    expect(log.get_by_text("Hello, game master!")).to_be_visible()
+    # the scripted model echoes the last user text: the reply proves the message reached it
+    echo = re.compile(re.escape(f"{REPLY} {ECHO}Hello, game master!") + "$")
+    expect(log.get_by_role("listitem")).to_have_text(
+        [re.compile("Hello, game master!$"), echo]
+    )
     shot(page, "05-play-with-reply")
 
 
@@ -119,6 +123,19 @@ def test_child_cannot_add_members_or_reissue(new_page: NewPage, shot: Shot) -> N
     assert page.get_by_role("button", name="Новая ссылка").count() == 0
     assert page.get_by_label("Имя", exact=True).count() == 0
     shot(page, "07-family-child-view")
+
+    # the UI hides the controls; the API must refuse them too
+    api = page.context.request
+    me = api.get("/api/v1/me").json()
+    members = api.get(f"/api/v1/families/{me['family_id']}/members").json()
+    adult = next(m for m in members if m["role"] == "adult")
+    add = api.post(
+        f"/api/v1/families/{me['family_id']}/members",
+        data={"display_name": "Intruder", "age_band": "6-9", "role": "child"},
+    )
+    assert add.status == 403, add.status
+    reissue = api.post(f"/api/v1/members/{adult['id']}/invite")
+    assert reissue.status == 403, reissue.status
 
 
 def test_english_family_gets_english_invite_and_pages(
