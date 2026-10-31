@@ -91,5 +91,11 @@
     "reissue": "New link",
     "reissued": "The previous link no longer works.",
     "reissueFor": "New link for {name}"
+  },
+  "join": {
+    "working": "Signing you in…",
+    "invalid": "This link is invalid or already used. Ask an adult for a new one.",
+    "failed": "Could not sign you in. Check your connection and open the link again.",
+    "create": "Create a family"
   }
 }

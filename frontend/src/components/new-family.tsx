@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { createFamily, type Invite } from "@/lib/api";
 import { check, familySchema, parseInterests, type FieldErrors } from "@/lib/forms";
 import { errorKey } from "@/lib/use-me";
-import { focusFirstError, TextField } from "@/components/fields";
+import { showErrors, TextField } from "@/components/fields";
 import { InviteLink, toLink, type Link } from "@/components/invite-link";
 import { MemberForm } from "@/components/member-form";
 import { btnCls, cardCls } from "@/components/styles";
@@ -31,8 +31,8 @@ export function NewFamily() {
       display_name: v.name,
       interests: parseInterests(v.interests),
     });
-    setErrors(r.ok ? {} : r.errors);
-    if (!r.ok) return focusFirstError(r.errors, FIELD_IDS);
+    if (!r.ok) return showErrors(setErrors, r.errors, FIELD_IDS);
+    setErrors({});
     setBusy(true);
     setFailure(null);
     try {

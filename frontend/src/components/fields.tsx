@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { inputCls } from "@/components/styles";
 
 type FieldProps = { id: string; label: string; error?: string; hint?: string };
@@ -80,11 +81,13 @@ export function SelectField({ value, onChange, options, ...f }: SelectProps) {
   );
 }
 
-/** Moves focus to the field of the first error so keyboard and screen-reader users land on it. */
-export function focusFirstError(
+/** Renders the errors, then focuses the first field so it is already described by its error. */
+export function showErrors(
+  setErrors: (e: Record<string, string>) => void,
   errors: Record<string, string>,
   ids: Record<string, string>,
 ): void {
+  flushSync(() => setErrors(errors));
   const key = Object.keys(errors)[0];
   if (key !== undefined && ids[key] !== undefined)
     document.getElementById(ids[key])?.focus();

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   absoluteInvite,
+  acceptInvite,
   ApiError,
   getMe,
   isAgentMissing,
@@ -85,5 +86,19 @@ describe("api client", () => {
     vi.stubGlobal("fetch", fetchMock);
     expect(await listMembers("f1")).toEqual([member]);
     expect(fetchMock.mock.calls[0]?.[0]).toMatch(/\/families\/f1\/members$/);
+  });
+
+  it("keeps the fragment in invite links", () => {
+    expect(absoluteInvite("/join#abc")).toBe(`${window.location.origin}/join#abc`);
+  });
+
+  it("posts the token to /invite/accept and maps 401", async () => {
+    const ok = reply(200, member);
+    vi.stubGlobal("fetch", ok);
+    await acceptInvite("t1");
+    expect(ok.mock.calls[0]?.[0]).toMatch(/\/invite\/accept$/);
+    expect(JSON.parse(String(ok.mock.calls[0]?.[1]?.body))).toEqual({ token: "t1" });
+    vi.stubGlobal("fetch", reply(401, { detail: "invalid invite" }));
+    await expect(acceptInvite("t1")).rejects.toMatchObject({ kind: "http", status: 401 });
   });
 });

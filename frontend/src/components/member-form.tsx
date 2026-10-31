@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { addMember, AGE_BANDS, ROLES, type Invite } from "@/lib/api";
 import { check, memberInputSchema, parseInterests, type FieldErrors } from "@/lib/forms";
 import { errorKey } from "@/lib/use-me";
-import { focusFirstError, SelectField, TextField } from "@/components/fields";
+import { showErrors, SelectField, TextField } from "@/components/fields";
 import { btnCls } from "@/components/styles";
 
 type Props = { familyId: string; onAdded: (invite: Invite) => void };
@@ -38,8 +38,8 @@ export function MemberForm({ familyId, onAdded }: Props) {
       role: v.role,
       interests: parseInterests(v.interests),
     });
-    setErrors(r.ok ? {} : r.errors);
-    if (!r.ok) return focusFirstError(r.errors, FIELD_IDS);
+    if (!r.ok) return showErrors(setErrors, r.errors, FIELD_IDS);
+    setErrors({});
     setBusy(true);
     setFailure(null);
     try {

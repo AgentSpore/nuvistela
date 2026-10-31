@@ -1,15 +1,14 @@
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
+import { apiRewrites } from "./src/lib/api-rewrites";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Dev only: keeps the API same-origin (cookies, no CORS). Production uses the reverse proxy.
+  // Baked in at build time. Unset where a reverse proxy (Caddy, K5) serves /api.
   async rewrites() {
-    if (process.env.NODE_ENV === "production") return [];
-    const target = process.env.DEV_API_ORIGIN ?? "http://localhost:8080";
-    return [{ source: "/api/:path*", destination: `${target}/api/:path*` }];
+    return apiRewrites(process.env.API_ORIGIN);
   },
 };
 

@@ -9,6 +9,8 @@ import { btnCls, inputCls } from "@/components/styles";
 type Note = "soon" | "failed" | null;
 type Message = { id: string; from: "me" | "agent"; text: string };
 
+let nextId = 0;
+
 const BUBBLE = {
   me: "max-w-[85%] self-end rounded-2xl bg-accent px-3 py-2 text-white",
   agent: "max-w-[85%] self-start rounded-2xl bg-honey/30 px-3 py-2",
@@ -16,7 +18,14 @@ const BUBBLE = {
 
 function Members({ familyId }: { familyId: string }) {
   const t = useTranslations("play");
-  const { members } = useMembers(familyId);
+  const te = useTranslations("errors");
+  const { members, failed } = useMembers(familyId);
+  if (failed)
+    return (
+      <p role="alert" className="text-sm font-medium text-danger">
+        {te("generic")}
+      </p>
+    );
   return (
     <ul aria-label={t("members")} className="flex flex-wrap gap-2">
       {members.map((x) => (
@@ -39,7 +48,7 @@ export function Play() {
   const [note, setNote] = useState<Note>(null);
   const [busy, setBusy] = useState(false);
   const push = (from: Message["from"], text: string) =>
-    setMessages((l) => [...l, { id: crypto.randomUUID(), from, text }]);
+    setMessages((l) => [...l, { id: `m${nextId++}`, from, text }]);
 
   async function send(e: FormEvent) {
     e.preventDefault();

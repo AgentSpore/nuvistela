@@ -35,12 +35,28 @@ export function errorKey(
 }
 
 /** Family roster from the API; `reload` refetches after a member is added. */
-export function useMembers(familyId: string): { members: Member[]; reload: () => void } {
+export function useMembers(familyId: string): {
+  members: Member[];
+  failed: boolean;
+  reload: () => void;
+} {
   const [members, setMembers] = useState<Member[]>([]);
+  const [failed, setFailed] = useState(false);
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    listMembers(familyId).then(setMembers, () => setMembers([]));
+    let ignore = false;
+    listMembers(familyId).then(
+      (list) => {
+        if (ignore) return;
+        setMembers(list);
+        setFailed(false);
+      },
+      () => !ignore && setFailed(true),
+    );
+    return () => {
+      ignore = true;
+    };
   }, [familyId, tick]);
   const reload = useCallback(() => setTick((n) => n + 1), []);
-  return { members, reload };
+  return { members, failed, reload };
 }

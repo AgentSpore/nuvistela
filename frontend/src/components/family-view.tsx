@@ -62,7 +62,8 @@ function MemberRow({ member, canReissue }: { member: Member; canReissue: boolean
 
 function Roster({ me }: { me: Member }) {
   const t = useTranslations("family");
-  const { members, reload } = useMembers(me.family_id);
+  const te = useTranslations("errors");
+  const { members, failed, reload } = useMembers(me.family_id);
   const [links, setLinks] = useState<Link[]>([]);
   const added = (invite: Invite) => {
     setLinks((l) => [...l, toLink(invite)]);
@@ -73,12 +74,17 @@ function Roster({ me }: { me: Member }) {
       <h1 id="fam-h" className="text-2xl font-bold">
         {t("title")}
       </h1>
+      {failed && (
+        <p role="alert" className="font-medium text-danger">
+          {te("generic")}
+        </p>
+      )}
       <ul className="flex flex-col gap-3">
         {members.map((x) => (
           <MemberRow
             key={x.id}
             member={x}
-            canReissue={me.role === "adult" && x.id !== me.id}
+            canReissue={me.role === "adult" && x.role === "child"}
           />
         ))}
       </ul>

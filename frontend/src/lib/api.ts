@@ -74,6 +74,8 @@ export const reissueInvite = (memberId: string) =>
   request(`/members/${memberId}/invite`, reissueSchema, post());
 export const listMembers = (familyId: string) =>
   request(`/families/${familyId}/members`, z.array(memberResponseSchema));
+export const acceptInvite = (token: string) =>
+  request("/invite/accept", memberResponseSchema, post({ token }));
 export const getMe = () => request("/me", memberResponseSchema);
 export const sendAgentMessage = (text: string) =>
   request("/agent/messages", replySchema, post({ text }));
