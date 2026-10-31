@@ -8,21 +8,21 @@ from app.domain.family import AgeBand, Family, Member, NewMember, Role
 _MEMBER_COLS = "id, family_id, display_name, age_band, role, interests, created_at"
 
 
-def _member(row: Row) -> Member:
-    return Member(
-        id=row.id,
-        family_id=row.family_id,
-        display_name=row.display_name,
-        age_band=AgeBand(row.age_band),
-        role=Role(row.role),
-        interests=tuple(row.interests),
-        created_at=row.created_at,
-    )
-
-
 class FamilyRepository:
     def __init__(self, conn: AsyncConnection) -> None:
         self._conn = conn
+
+    @staticmethod
+    def _member(row: Row) -> Member:
+        return Member(
+            id=row.id,
+            family_id=row.family_id,
+            display_name=row.display_name,
+            age_band=AgeBand(row.age_band),
+            role=Role(row.role),
+            interests=tuple(row.interests),
+            created_at=row.created_at,
+        )
 
     async def create_family(self, title: str, locale: str) -> Family:
         row = (
@@ -56,7 +56,7 @@ class FamilyRepository:
                 },
             )
         ).one()
-        return _member(row)
+        return self._member(row)
 
     async def get_member(self, member_id: UUID) -> Member | None:
         row = (
@@ -64,7 +64,7 @@ class FamilyRepository:
                 text(f"SELECT {_MEMBER_COLS} FROM members WHERE id = :id"), {"id": member_id}
             )
         ).first()
-        return _member(row) if row else None
+        return self._member(row) if row else None
 
     async def get_member_by_token_hash(self, token_hash: str) -> Member | None:
         row = (
@@ -73,7 +73,7 @@ class FamilyRepository:
                 {"hash": token_hash},
             )
         ).first()
-        return _member(row) if row else None
+        return self._member(row) if row else None
 
     async def set_token_hash(self, member_id: UUID, token_hash: str) -> None:
         await self._conn.execute(

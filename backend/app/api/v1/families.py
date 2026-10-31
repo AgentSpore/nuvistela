@@ -4,14 +4,14 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.api.v1.deps import SESSION_COOKIE, CurrentMember, FamilyServiceDep
-from app.api.v1.schemas import (
+from app.domain.errors import Forbidden, NotFound, Unauthorized
+from app.schemas.family import (
     AddMemberRequest,
     CreateFamilyRequest,
     FamilyCreatedResponse,
     InviteResponse,
     MemberResponse,
 )
-from app.domain.errors import Forbidden, NotFound, Unauthorized
 
 router = APIRouter(prefix="/api/v1")
 

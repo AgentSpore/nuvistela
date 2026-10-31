@@ -68,6 +68,14 @@ async def test_create_family_then_invite_login(client: AsyncClient) -> None:
     assert "tg_user_id" not in me.json()
 
 
+async def test_session_cookie_is_secure_when_configured(secure_client: AsyncClient) -> None:
+    created = await secure_client.post(
+        "/api/v1/families", json={"title": "Smiths", "display_name": "Papa"}
+    )
+    login = await secure_client.get(created.json()["invite_url"])
+    assert "secure" in login.headers["set-cookie"].lower().split("; ")
+
+
 async def test_adult_adds_child(
     client: AsyncClient, new_family: Callable[[], Awaitable[Person]]
 ) -> None:

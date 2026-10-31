@@ -47,6 +47,13 @@ async def client(postgres_url: str) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
+async def secure_client(postgres_url: str) -> AsyncIterator[AsyncClient]:
+    settings = Settings(database_url=postgres_url, cookie_secure=True)
+    async for c in _client(create_app(settings)):
+        yield c
+
+
+@pytest.fixture
 async def client_db_blackholed() -> AsyncIterator[AsyncClient]:
     blackhole = "postgresql+asyncpg://u:p@10.255.255.1:5432/none"
     async for c in _client(create_app(Settings(database_url=blackhole))):
