@@ -26,7 +26,7 @@ describe("Landing", () => {
       </NextIntlClientProvider>,
     );
     expect(
-      screen.getByRole("heading", { level: 1, name: "Kinsaga" }),
+      screen.getByRole("heading", { level: 1, name: messages.landing.title }),
     ).toBeInTheDocument();
     expect(screen.getByText(pitch)).toBeInTheDocument();
   });

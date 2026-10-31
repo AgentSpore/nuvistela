@@ -14,6 +14,7 @@ COPY . .
 RUN pnpm build
 
 FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS runtime
+# INVARIANT(S1): HOSTNAME must stay 0.0.0.0 — with 127.0.0.1 Next standalone rewrites / to http://localhost:<port>/ru and next-intl answers 307 Location: / (loop)
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
