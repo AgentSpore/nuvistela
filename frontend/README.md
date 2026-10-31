@@ -21,4 +21,6 @@ docker build -t bumbli-frontend .
 docker run --rm -p 3000:3000 bumbli-frontend   # PORT env overrides 3000
 ```
 
+The image pins `HOSTNAME=0.0.0.0`; do not run it with `-e HOSTNAME=127.0.0.1` (every default-locale page would loop on 307, the server exits at boot).
+
 `NEXT_PUBLIC_API_URL` and `API_ORIGIN` are inlined at build time: pass `--build-arg`. Without `API_ORIGIN` the image expects a reverse proxy to serve `/api` (the real deploy in K5 uses Caddy); `docker compose` passes `API_ORIGIN=http://backend:8080`.
