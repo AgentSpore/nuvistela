@@ -1,10 +1,9 @@
 from uuid import UUID
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import RedirectResponse
 
 from app.api.v1.deps import SESSION_COOKIE, CurrentMember, FamilyServiceDep
-from app.domain.errors import Forbidden, NotFound, Unauthorized
 from app.schemas.family import (
     AddMemberRequest,
     CreateFamilyRequest,
@@ -12,36 +11,34 @@ from app.schemas.family import (
     InviteResponse,
     MemberResponse,
 )
+from app.services.family_service import FamilyService
 
 router = APIRouter(prefix="/api/v1")
-
-SESSION_MAX_AGE_S = 365 * 24 * 3600
 
 
 def _invite_url(token: str) -> str:
     return f"/api/v1/invite/{token}"
 
 
-def register_error_handlers(app: FastAPI) -> None:
-    for exc, status, detail in (
-        (Unauthorized, 401, "not authenticated"),
-        (Forbidden, 403, "adults only"),
-        (NotFound, 404, "not found"),
-    ):
-
-        def handler(_: Request, __: Exception, status: int = status, detail: str = detail):
-            return JSONResponse({"detail": detail}, status_code=status)
-
-        app.add_exception_handler(exc, handler)
+def _set_session_cookie(response: Response, request: Request, session: str) -> None:
+    response.set_cookie(
+        SESSION_COOKIE,
+        session,
+        max_age=int(FamilyService.SESSION_TTL.total_seconds()),
+        httponly=True,
+        secure=request.app.state.settings.cookie_secure,
+        samesite="lax",
+    )
 
 
 @router.post("/families", status_code=201)
 async def create_family(
-    body: CreateFamilyRequest, service: FamilyServiceDep
+    body: CreateFamilyRequest, request: Request, response: Response, service: FamilyServiceDep
 ) -> FamilyCreatedResponse:
-    family, member, token = await service.create_family(
+    family, member, token, session = await service.create_family(
         body.title, body.locale, body.display_name, tuple(body.interests)
     )
+    _set_session_cookie(response, request, session)
     return FamilyCreatedResponse(
         family_id=family.id, member=MemberResponse.of(member), invite_url=_invite_url(token)
     )
@@ -55,6 +52,13 @@ async def add_member(
     return InviteResponse(member=MemberResponse.of(member), invite_url=_invite_url(token))
 
 
+@router.get("/families/{family_id}/members")
+async def list_members(
+    family_id: UUID, actor: CurrentMember, service: FamilyServiceDep
+) -> list[MemberResponse]:
+    return [MemberResponse.of(m) for m in await service.list_members(actor, family_id)]
+
+
 @router.post("/members/{member_id}/invite")
 async def reissue_invite(
     member_id: UUID, actor: CurrentMember, service: FamilyServiceDep
@@ -66,19 +70,10 @@ async def reissue_invite(
 async def accept_invite(
     token: str, request: Request, service: FamilyServiceDep
 ) -> RedirectResponse:
-    try:
-        await service.authenticate(token)
-    except Unauthorized:
-        raise HTTPException(status_code=401, detail="invalid invite") from None
+    session = await service.accept_invite(token)
     response = RedirectResponse("/play", status_code=303)
-    response.set_cookie(
-        SESSION_COOKIE,
-        token,
-        max_age=SESSION_MAX_AGE_S,
-        httponly=True,
-        secure=request.app.state.settings.cookie_secure,
-        samesite="lax",
-    )
+    response.headers["Referrer-Policy"] = "no-referrer"
+    _set_session_cookie(response, request, session)
     return response
 
 

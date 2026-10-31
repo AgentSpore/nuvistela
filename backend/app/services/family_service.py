@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.domain.errors import Forbidden, NotFound, Unauthorized
@@ -8,6 +9,9 @@ from app.repositories.family_repository import FamilyRepository
 
 
 class FamilyService:
+    INVITE_TTL = timedelta(days=7)
+    SESSION_TTL = timedelta(days=365)
+
     def __init__(self, repo: FamilyRepository) -> None:
         self._repo = repo
 
@@ -21,37 +25,61 @@ class FamilyService:
         token = secrets.token_urlsafe(32)
         return token, cls.hash_token(token)
 
+    @classmethod
+    def _invite_expiry(cls) -> datetime:
+        return datetime.now(UTC) + cls.INVITE_TTL
+
+    async def _open_session(self, member_id: UUID) -> str:
+        session, session_hash = self._new_token()
+        expires = datetime.now(UTC) + self.SESSION_TTL
+        await self._repo.create_session(member_id, session_hash, expires)
+        return session
+
     async def create_family(
         self, title: str, locale: str, first_adult: str, interests: tuple[str, ...]
-    ) -> tuple[Family, Member, str]:
+    ) -> tuple[Family, Member, str, str]:
+        """Create the family and its first adult; return (family, adult, invite, session)."""
         family = await self._repo.create_family(title, locale)
-        token, token_hash = self._new_token()
+        invite, invite_hash = self._new_token()
         adult = NewMember(first_adult, AgeBand.ADULT, Role.ADULT, interests)
-        member = await self._repo.add_member(family.id, adult, token_hash)
-        return family, member, token
+        member = await self._repo.add_member(family.id, adult, invite_hash, self._invite_expiry())
+        return family, member, invite, await self._open_session(member.id)
 
-    async def authenticate(self, token: str) -> Member:
-        member = await self._repo.get_member_by_token_hash(self.hash_token(token))
+    async def accept_invite(self, invite: str) -> str:
+        """Consume a single-use invite and return a new session token."""
+        member = await self._repo.consume_invite(self.hash_token(invite))
         if member is None:
-            raise Unauthorized
+            raise Unauthorized("invalid or expired invite")
+        return await self._open_session(member.id)
+
+    async def authenticate(self, session: str) -> Member:
+        member = await self._repo.get_member_by_session_hash(self.hash_token(session))
+        if member is None:
+            raise Unauthorized("not authenticated")
         return member
 
     async def add_member(
         self, actor: Member, family_id: UUID, new: NewMember
     ) -> tuple[Member, str]:
         if actor.family_id != family_id:
-            raise NotFound
+            raise NotFound("family not found")
         if actor.role is not Role.ADULT:
-            raise Forbidden
-        token, token_hash = self._new_token()
-        return await self._repo.add_member(family_id, new, token_hash), token
+            raise Forbidden("only adults can add members")
+        invite, invite_hash = self._new_token()
+        member = await self._repo.add_member(family_id, new, invite_hash, self._invite_expiry())
+        return member, invite
+
+    async def list_members(self, actor: Member, family_id: UUID) -> list[Member]:
+        if actor.family_id != family_id:
+            raise NotFound("family not found")
+        return await self._repo.list_members(family_id)
 
     async def reissue_invite(self, actor: Member, member_id: UUID) -> str:
         target = await self._repo.get_member(member_id)
         if target is None or target.family_id != actor.family_id:
-            raise NotFound
+            raise NotFound("member not found")
         if actor.role is not Role.ADULT:
-            raise Forbidden
-        token, token_hash = self._new_token()
-        await self._repo.set_token_hash(member_id, token_hash)
-        return token
+            raise Forbidden("only adults can reissue invites")
+        invite, invite_hash = self._new_token()
+        await self._repo.replace_invite(member_id, invite_hash, self._invite_expiry())
+        return invite

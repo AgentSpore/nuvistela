@@ -5,6 +5,7 @@ CREATE TABLE families (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- invite_token_hash is single-use: NULL once consumed. A login lives in sessions.
 CREATE TABLE members (
     id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     family_id         uuid NOT NULL REFERENCES families (id) ON DELETE CASCADE,
@@ -12,59 +13,22 @@ CREATE TABLE members (
     age_band          text NOT NULL CHECK (age_band IN ('3-5', '6-9', '10-13', '14-17', 'adult')),
     role              text NOT NULL CHECK (role IN ('adult', 'child')),
     interests         text[] NOT NULL DEFAULT '{}' CHECK (cardinality(interests) <= 10),
-    tg_user_id        bigint UNIQUE,
-    invite_token_hash text NOT NULL UNIQUE,
-    created_at        timestamptz NOT NULL DEFAULT now()
+    tg_user_id        bigint,
+    invite_token_hash text UNIQUE,
+    invite_expires_at timestamptz,
+    created_at        timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (family_id, tg_user_id)
 );
 CREATE INDEX members_family_id_idx ON members (family_id);
 
-CREATE TABLE quests (
-    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    family_id   uuid NOT NULL REFERENCES families (id) ON DELETE CASCADE,
-    title       text NOT NULL,
-    assignee_id uuid NOT NULL REFERENCES members (id),
-    created_by  uuid NOT NULL REFERENCES members (id),
-    status      text NOT NULL DEFAULT 'open'
-        CHECK (status IN ('open', 'claimed', 'confirmed', 'cancelled')),
-    created_at  timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX quests_family_id_idx ON quests (family_id);
-CREATE INDEX quests_assignee_id_idx ON quests (assignee_id);
-CREATE INDEX quests_created_by_idx ON quests (created_by);
-
-CREATE TABLE quest_events (
-    id       uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    quest_id uuid NOT NULL REFERENCES quests (id) ON DELETE CASCADE,
-    kind     text NOT NULL CHECK (kind IN ('claimed', 'confirmed', 'rejected')),
-    actor_id uuid NOT NULL REFERENCES members (id),
-    at       timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX quest_events_quest_id_idx ON quest_events (quest_id);
-CREATE INDEX quest_events_actor_id_idx ON quest_events (actor_id);
-
-CREATE TABLE chapters (
+CREATE TABLE sessions (
     id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    family_id  uuid NOT NULL REFERENCES families (id) ON DELETE CASCADE,
-    number     integer NOT NULL CHECK (number > 0),
-    quest_id   uuid REFERENCES quests (id),
-    kind       text NOT NULL CHECK (kind IN ('daily', 'weekly')),
-    text       text NOT NULL DEFAULT '',
-    model      text,
-    status     text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'ready', 'fallback')),
+    member_id  uuid NOT NULL REFERENCES members (id) ON DELETE CASCADE,
+    token_hash text NOT NULL UNIQUE,
     created_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (family_id, number)
+    expires_at timestamptz NOT NULL
 );
-CREATE INDEX chapters_quest_id_idx ON chapters (quest_id);
-
-CREATE TABLE chapter_jobs (
-    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    chapter_id  uuid NOT NULL REFERENCES chapters (id) ON DELETE CASCADE,
-    attempts    integer NOT NULL DEFAULT 0,
-    next_run_at timestamptz NOT NULL DEFAULT now(),
-    locked_at   timestamptz
-);
-CREATE INDEX chapter_jobs_chapter_id_idx ON chapter_jobs (chapter_id);
-CREATE INDEX chapter_jobs_next_run_at_idx ON chapter_jobs (next_run_at);
+CREATE INDEX sessions_member_id_idx ON sessions (member_id);
 
 CREATE TABLE tg_chats (
     chat_id   bigint PRIMARY KEY,
@@ -78,3 +42,15 @@ CREATE TABLE link_codes (
     expires_at timestamptz NOT NULL
 );
 CREATE INDEX link_codes_member_id_idx ON link_codes (member_id);
+
+CREATE TABLE agent_messages (
+    id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    family_id  uuid NOT NULL REFERENCES families (id) ON DELETE CASCADE,
+    member_id  uuid REFERENCES members (id) ON DELETE SET NULL,
+    role       text NOT NULL CHECK (role IN ('user', 'agent', 'system')),
+    channel    text NOT NULL,
+    content    jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX agent_messages_family_created_idx ON agent_messages (family_id, created_at);
+CREATE INDEX agent_messages_member_id_idx ON agent_messages (member_id);

@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Row, text
@@ -36,14 +37,16 @@ class FamilyRepository:
         ).one()
         return Family(row.id, row.title, row.locale, row.created_at)
 
-    async def add_member(self, family_id: UUID, new: NewMember, token_hash: str) -> Member:
+    async def add_member(
+        self, family_id: UUID, new: NewMember, invite_hash: str, invite_expires_at: datetime
+    ) -> Member:
         row = (
             await self._conn.execute(
                 text(
-                    "INSERT INTO members"
-                    " (family_id, display_name, age_band, role, interests, invite_token_hash)"
-                    " VALUES (:family_id, :name, :age_band, :role,"
-                    " CAST(:interests AS text[]), :hash)"
+                    "INSERT INTO members (family_id, display_name, age_band, role, interests,"
+                    " invite_token_hash, invite_expires_at)"
+                    " VALUES (:family_id, :name, :age_band, :role, CAST(:interests AS text[]),"
+                    " :hash, :expires)"
                     f" RETURNING {_MEMBER_COLS}"
                 ),
                 {
@@ -52,7 +55,8 @@ class FamilyRepository:
                     "age_band": new.age_band.value,
                     "role": new.role.value,
                     "interests": list(new.interests),
-                    "hash": token_hash,
+                    "hash": invite_hash,
+                    "expires": invite_expires_at,
                 },
             )
         ).one()
@@ -66,17 +70,62 @@ class FamilyRepository:
         ).first()
         return self._member(row) if row else None
 
-    async def get_member_by_token_hash(self, token_hash: str) -> Member | None:
+    async def list_members(self, family_id: UUID) -> list[Member]:
+        rows = await self._conn.execute(
+            text(
+                f"SELECT {_MEMBER_COLS} FROM members WHERE family_id = :id ORDER BY created_at, id"
+            ),
+            {"id": family_id},
+        )
+        return [self._member(r) for r in rows]
+
+    async def consume_invite(self, invite_hash: str) -> Member | None:
+        """Clear a live invite and return its member; None if unknown, used or expired."""
         row = (
             await self._conn.execute(
-                text(f"SELECT {_MEMBER_COLS} FROM members WHERE invite_token_hash = :hash"),
+                text(
+                    "UPDATE members SET invite_token_hash = NULL, invite_expires_at = NULL"
+                    " WHERE invite_token_hash = :hash AND invite_expires_at > now()"
+                    f" RETURNING {_MEMBER_COLS}"
+                ),
+                {"hash": invite_hash},
+            )
+        ).first()
+        return self._member(row) if row else None
+
+    async def create_session(self, member_id: UUID, token_hash: str, expires_at: datetime) -> None:
+        await self._conn.execute(
+            text(
+                "INSERT INTO sessions (member_id, token_hash, expires_at)"
+                " VALUES (:member_id, :hash, :expires)"
+            ),
+            {"member_id": member_id, "hash": token_hash, "expires": expires_at},
+        )
+
+    async def get_member_by_session_hash(self, token_hash: str) -> Member | None:
+        row = (
+            await self._conn.execute(
+                text(
+                    "SELECT m.id, m.family_id, m.display_name, m.age_band, m.role, m.interests,"
+                    " m.created_at FROM sessions s JOIN members m ON m.id = s.member_id"
+                    " WHERE s.token_hash = :hash AND s.expires_at > now()"
+                ),
                 {"hash": token_hash},
             )
         ).first()
         return self._member(row) if row else None
 
-    async def set_token_hash(self, member_id: UUID, token_hash: str) -> None:
+    async def replace_invite(
+        self, member_id: UUID, invite_hash: str, invite_expires_at: datetime
+    ) -> None:
+        """Set a new invite and drop every session of the member."""
         await self._conn.execute(
-            text("UPDATE members SET invite_token_hash = :hash WHERE id = :id"),
-            {"hash": token_hash, "id": member_id},
+            text(
+                "UPDATE members SET invite_token_hash = :hash, invite_expires_at = :expires"
+                " WHERE id = :id"
+            ),
+            {"hash": invite_hash, "expires": invite_expires_at, "id": member_id},
+        )
+        await self._conn.execute(
+            text("DELETE FROM sessions WHERE member_id = :id"), {"id": member_id}
         )

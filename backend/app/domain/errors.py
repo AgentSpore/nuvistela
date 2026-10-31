@@ -1,5 +1,5 @@
 class DomainError(Exception):
-    """Base for rule violations the API maps to HTTP statuses."""
+    """Base for rule violations; the message is safe to show to the client."""
 
 
 class Unauthorized(DomainError):

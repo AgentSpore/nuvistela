@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import Cookie, Depends, HTTPException, Request
+from fastapi import Cookie, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.domain.errors import Unauthorized
@@ -18,7 +18,11 @@ async def get_conn(request: Request) -> AsyncIterator[AsyncConnection]:
         yield conn
 
 
-def get_family_service(conn: Annotated[AsyncConnection, Depends(get_conn)]) -> FamilyService:
+# scope="function": commit runs before the response is sent, so a client holding
+# a 201 can always see the rows (default "request" scope commits after sending).
+def get_family_service(
+    conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")],
+) -> FamilyService:
     return FamilyService(FamilyRepository(conn))
 
 
@@ -27,14 +31,11 @@ FamilyServiceDep = Annotated[FamilyService, Depends(get_family_service)]
 
 async def current_member(
     service: FamilyServiceDep,
-    token: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
+    session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> Member:
-    if not token:
-        raise HTTPException(status_code=401, detail="not authenticated")
-    try:
-        return await service.authenticate(token)
-    except Unauthorized:
-        raise HTTPException(status_code=401, detail="not authenticated") from None
+    if not session:
+        raise Unauthorized("not authenticated")
+    return await service.authenticate(session)
 
 
 CurrentMember = Annotated[Member, Depends(current_member)]

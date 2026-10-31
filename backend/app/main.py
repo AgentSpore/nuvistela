@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from app.api.errors import register_error_handlers
 from app.api.health import router as health_router
-from app.api.v1.families import register_error_handlers
 from app.api.v1.families import router as families_router
 from app.core.config import Settings
 
