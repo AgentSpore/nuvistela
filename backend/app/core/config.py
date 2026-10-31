@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     database_url: str
     port: int = 8080
+    cookie_secure: bool = True
     family_llm_model: str | None = None
     openrouter_api_key: str | None = None
     telegram_bot_token: str | None = None

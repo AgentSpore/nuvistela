@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.api.health import router as health_router
+from app.api.v1.families import register_error_handlers
+from app.api.v1.families import router as families_router
 from app.core.config import Settings
 
 
@@ -23,4 +25,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Bumbli", lifespan=lifespan)
     app.state.settings = settings
     app.include_router(health_router)
+    app.include_router(families_router)
+    register_error_handlers(app)
     return app
