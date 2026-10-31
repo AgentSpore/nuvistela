@@ -7,7 +7,10 @@ _STATUS: dict[type[Exception], int] = {Unauthorized: 401, Forbidden: 403, NotFou
 
 
 async def _domain_error(_: Request, exc: Exception) -> JSONResponse:
-    return JSONResponse({"detail": str(exc)}, status_code=_STATUS[type(exc)])
+    return JSONResponse(
+        {"detail": str(exc)},
+        status_code=next(code for t, code in _STATUS.items() if isinstance(exc, t)),
+    )
 
 
 def register_error_handlers(app: FastAPI) -> None:

@@ -53,6 +53,10 @@ class MemberResponse(BaseModel):
         )
 
 
+class AcceptInviteRequest(BaseModel):
+    token: Annotated[str, StringConstraints(min_length=1, max_length=200)]
+
+
 class InviteResponse(BaseModel):
     member: MemberResponse
     invite_url: str

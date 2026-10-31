@@ -45,12 +45,12 @@ class FamilyService:
         member = await self._repo.add_member(family.id, adult, invite_hash, self._invite_expiry())
         return family, member, invite, await self._open_session(member.id)
 
-    async def accept_invite(self, invite: str) -> str:
-        """Consume a single-use invite and return a new session token."""
+    async def accept_invite(self, invite: str) -> tuple[Member, str]:
+        """Consume a single-use invite; return the member and a new session token."""
         member = await self._repo.consume_invite(self.hash_token(invite))
         if member is None:
             raise Unauthorized("invalid or expired invite")
-        return await self._open_session(member.id)
+        return member, await self._open_session(member.id)
 
     async def authenticate(self, session: str) -> Member:
         member = await self._repo.get_member_by_session_hash(self.hash_token(session))
@@ -80,6 +80,9 @@ class FamilyService:
             raise NotFound("member not found")
         if actor.role is not Role.ADULT:
             raise Forbidden("only adults can reissue invites")
+        # (Q1 default) an adult reissues only for a child; another adult's login stays theirs.
+        if target.role is Role.ADULT and target.id != actor.id:
+            raise Forbidden("cannot reissue another adult's invite")
         invite, invite_hash = self._new_token()
         await self._repo.replace_invite(member_id, invite_hash, self._invite_expiry())
         return invite

@@ -19,7 +19,6 @@ CREATE TABLE members (
     created_at        timestamptz NOT NULL DEFAULT now(),
     UNIQUE (family_id, tg_user_id)
 );
-CREATE INDEX members_family_id_idx ON members (family_id);
 
 CREATE TABLE sessions (
     id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),

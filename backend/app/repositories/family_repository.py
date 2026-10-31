@@ -94,6 +94,11 @@ class FamilyRepository:
         return self._member(row) if row else None
 
     async def create_session(self, member_id: UUID, token_hash: str, expires_at: datetime) -> None:
+        """Insert a session and drop the member's expired ones."""
+        await self._conn.execute(
+            text("DELETE FROM sessions WHERE member_id = :id AND expires_at <= now()"),
+            {"id": member_id},
+        )
         await self._conn.execute(
             text(
                 "INSERT INTO sessions (member_id, token_hash, expires_at)"

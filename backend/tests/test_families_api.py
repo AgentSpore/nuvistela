@@ -1,10 +1,12 @@
+import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any
 from uuid import uuid4
 
 import asyncpg
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 
 ADULT_BODY = {"display_name": "Mama", "age_band": "adult", "role": "adult"}
 CHILD_BODY = {"display_name": "Kid", "age_band": "6-9", "role": "child", "interests": ["lego"]}
@@ -18,9 +20,18 @@ class Person:
     cookie: dict[str, str]
 
 
+def _token(invite_url: str) -> str:
+    assert invite_url.startswith("/join#")
+    return invite_url.split("#", 1)[1]
+
+
+async def _accept(client: AsyncClient, invite_url: str) -> Response:
+    return await client.post("/api/v1/invite/accept", json={"token": _token(invite_url)})
+
+
 async def _login(client: AsyncClient, invite_url: str) -> dict[str, str]:
-    resp = await client.get(invite_url)
-    assert resp.status_code == 303
+    resp = await _accept(client, invite_url)
+    assert resp.status_code == 200
     return {"Cookie": f"bumbli_session={resp.cookies['bumbli_session']}"}
 
 
@@ -61,9 +72,9 @@ async def test_create_family_then_invite_login(client: AsyncClient) -> None:
     assert body["member"]["role"] == "adult"
     assert body["member"]["age_band"] == "adult"
 
-    login = await client.get(body["invite_url"])
-    assert login.status_code == 303
-    assert login.headers["location"] == "/play"
+    login = await _accept(client, body["invite_url"])
+    assert login.status_code == 200
+    assert login.json()["id"] == body["member"]["id"]
     set_cookie = login.headers["set-cookie"].lower()
     assert "httponly" in set_cookie
     assert "samesite=lax" in set_cookie
@@ -78,7 +89,7 @@ async def test_session_cookie_is_secure_when_configured(secure_client: AsyncClie
     created = await secure_client.post(
         "/api/v1/families", json={"title": "Smiths", "display_name": "Papa"}
     )
-    login = await secure_client.get(created.json()["invite_url"])
+    login = await _accept(secure_client, created.json()["invite_url"])
     assert "secure" in login.headers["set-cookie"].lower().split("; ")
 
 
@@ -88,12 +99,12 @@ async def test_creator_has_session_right_after_create(client: AsyncClient) -> No
     assert "httponly" in set_cookie
     assert "samesite=lax" in set_cookie
     assert f"max-age={365 * 24 * 3600}" in set_cookie
-    assert created.cookies["bumbli_session"] != created.json()["invite_url"].rsplit("/", 1)[-1]
+    assert created.cookies["bumbli_session"] != _token(created.json()["invite_url"])
     added = await client.post(
         f"/api/v1/families/{created.json()['family_id']}/members", json=CHILD_BODY
     )
     assert added.status_code == 201
-    assert (await client.get(created.json()["invite_url"])).status_code == 303
+    assert (await _accept(client, created.json()["invite_url"])).status_code == 200
 
 
 async def test_adult_adds_child(
@@ -197,14 +208,26 @@ async def test_reissue_kills_unused_old_invite(
     child_id = added.json()["member"]["id"]
     old_invite = added.json()["invite_url"]
     await client.post(f"/api/v1/members/{child_id}/invite", headers=adult.cookie)
-    assert (await client.get(old_invite)).status_code == 401
+    assert (await _accept(client, old_invite)).status_code == 401
 
 
 async def test_invite_is_single_use(client: AsyncClient) -> None:
     created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
     url = created.json()["invite_url"]
-    assert (await client.get(url)).status_code == 303
-    assert (await client.get(url)).status_code == 401
+    assert (await _accept(client, url)).status_code == 200
+    assert (await _accept(client, url)).status_code == 401
+
+
+@pytest.fixture
+def db_value(postgres_url: str) -> Callable[..., Awaitable[Any]]:
+    async def run(sql: str, *args: str) -> Any:
+        conn = await asyncpg.connect(postgres_url.replace("+asyncpg", ""))
+        try:
+            return await conn.fetchval(sql, *args)
+        finally:
+            await conn.close()
+
+    return run
 
 
 @pytest.fixture
@@ -227,7 +250,7 @@ async def test_expired_invite_is_rejected(
         "UPDATE members SET invite_expires_at = now() - interval '1 minute' WHERE id = $1::uuid",
         created.json()["member"]["id"],
     )
-    assert (await client.get(created.json()["invite_url"])).status_code == 401
+    assert (await _accept(client, created.json()["invite_url"])).status_code == 401
 
 
 async def test_expired_session_is_rejected(
@@ -246,13 +269,14 @@ async def test_expired_session_is_rejected(
 async def test_cookie_carries_session_not_invite(client: AsyncClient) -> None:
     created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
     url = created.json()["invite_url"]
-    login = await client.get(url)
+    login = await _accept(client, url)
     assert login.headers["referrer-policy"] == "no-referrer"
-    assert login.cookies["bumbli_session"] != url.rsplit("/", 1)[-1]
+    assert login.cookies["bumbli_session"] != _token(url)
 
 
 async def test_invalid_token_is_unauthorized(client: AsyncClient) -> None:
-    assert (await client.get("/api/v1/invite/not-a-token")).status_code == 401
+    bad_invite = await client.post("/api/v1/invite/accept", json={"token": "not-a-token"})
+    assert bad_invite.status_code == 401
     assert (await client.get("/api/v1/me")).status_code == 401
     bad = await client.get("/api/v1/me", headers={"Cookie": "bumbli_session=forged"})
     assert bad.status_code == 401
@@ -277,3 +301,68 @@ async def test_member_validation(
         headers=adult.cookie,
     )
     assert resp.status_code == 422
+
+
+async def test_get_cannot_consume_invite(client: AsyncClient) -> None:
+    """A link-preview crawler only issues GET; it must not burn the invite."""
+    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    url = created.json()["invite_url"]
+    token = _token(url)
+    for path in (f"/api/v1/invite/{token}", f"/join/{token}", "/join"):
+        resp = await client.get(path)
+        assert resp.status_code in (404, 405)
+        assert "bumbli_session=" not in resp.headers.get("set-cookie", "")
+    assert (await _accept(client, url)).status_code == 200
+
+
+async def test_concurrent_accepts_yield_one_session(
+    client: AsyncClient, db_value: Callable[..., Awaitable[Any]]
+) -> None:
+    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Race"})
+    url = created.json()["invite_url"]
+    member_id = created.json()["member"]["id"]
+    before = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
+    results = await asyncio.gather(*(_accept(client, url) for _ in range(2)))
+    after = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
+    assert sorted(r.status_code for r in results) == [200, 401]
+    assert after - before == 1
+
+
+async def test_adult_cannot_reissue_another_adults_invite(
+    client: AsyncClient, new_family: Callable[[], Awaitable[Person]]
+) -> None:
+    papa = await new_family()
+    added = await client.post(
+        f"/api/v1/families/{papa.family_id}/members", json=ADULT_BODY, headers=papa.cookie
+    )
+    mama_id = added.json()["member"]["id"]
+    resp = await client.post(f"/api/v1/members/{mama_id}/invite", headers=papa.cookie)
+    assert resp.status_code == 403
+    assert (await _accept(client, added.json()["invite_url"])).status_code == 200
+
+
+async def test_adult_can_reissue_a_childs_invite(
+    client: AsyncClient,
+    new_family: Callable[[], Awaitable[Person]],
+    add_child: Callable[[Person], Awaitable[Person]],
+) -> None:
+    papa = await new_family()
+    kid = await add_child(papa)
+    resp = await client.post(f"/api/v1/members/{kid.id}/invite", headers=papa.cookie)
+    assert resp.status_code == 200
+
+
+async def test_login_purges_members_expired_sessions(
+    client: AsyncClient,
+    db_exec: Callable[..., Awaitable[None]],
+    db_value: Callable[..., Awaitable[Any]],
+) -> None:
+    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    member_id = created.json()["member"]["id"]
+    await db_exec(
+        "UPDATE sessions SET expires_at = now() - interval '1 day' WHERE member_id = $1::uuid",
+        member_id,
+    )
+    assert (await _accept(client, created.json()["invite_url"])).status_code == 200
+    rows = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
+    assert rows == 1

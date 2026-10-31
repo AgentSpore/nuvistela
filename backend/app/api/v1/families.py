@@ -1,10 +1,10 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import RedirectResponse
 
 from app.api.v1.deps import SESSION_COOKIE, CurrentMember, FamilyServiceDep
 from app.schemas.family import (
+    AcceptInviteRequest,
     AddMemberRequest,
     CreateFamilyRequest,
     FamilyCreatedResponse,
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1")
 
 
 def _invite_url(token: str) -> str:
-    return f"/api/v1/invite/{token}"
+    return f"/join#{token}"  # fragment: never sent to a server or logged
 
 
 def _set_session_cookie(response: Response, request: Request, session: str) -> None:
@@ -66,15 +66,14 @@ async def reissue_invite(
     return {"invite_url": _invite_url(await service.reissue_invite(actor, member_id))}
 
 
-@router.get("/invite/{token}")
+@router.post("/invite/accept")
 async def accept_invite(
-    token: str, request: Request, service: FamilyServiceDep
-) -> RedirectResponse:
-    session = await service.accept_invite(token)
-    response = RedirectResponse("/play", status_code=303)
+    body: AcceptInviteRequest, request: Request, response: Response, service: FamilyServiceDep
+) -> MemberResponse:
+    member, session = await service.accept_invite(body.token)
     response.headers["Referrer-Policy"] = "no-referrer"
     _set_session_cookie(response, request, session)
-    return response
+    return MemberResponse.of(member)
 
 
 @router.get("/me")
