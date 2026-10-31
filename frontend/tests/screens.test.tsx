@@ -1,4 +1,4 @@
-import { renderHook, screen, waitFor } from "@testing-library/react";
+import { act, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -161,6 +161,21 @@ describe("useMembers", () => {
     expect(result.current.members[0]?.id).toBe("new");
   });
 
+  it("ignores a stale failure that arrives after a fresh success", async () => {
+    let lateFail!: (e: unknown) => void;
+    m.listMembers
+      .mockReturnValueOnce(new Promise((_, rej) => (lateFail = rej)))
+      .mockResolvedValueOnce([member({ id: "new" })]);
+    const { result, rerender } = renderHook(({ id }) => useMembers(id), {
+      initialProps: { id: "f1" },
+    });
+    rerender({ id: "f2" });
+    await waitFor(() => expect(result.current.members[0]?.id).toBe("new"));
+    lateFail(new api.ApiError("network", 0));
+    await new Promise((r) => setTimeout(r, 10));
+    expect(result.current.failed).toBe(false);
+  });
+
   it("renders an alert on /family when the roster fails", async () => {
     m.listMembers.mockRejectedValue(new api.ApiError("http", 500));
     renderRu(<FamilyView />);
@@ -207,9 +222,18 @@ describe("/join", () => {
 
   it("consumes the token once, clears the address bar and enters the game", async () => {
     open("#tok123");
-    m.acceptInvite.mockResolvedValue(member());
+    let hashAtCall: string | null = null;
+    m.acceptInvite.mockImplementation(async () => {
+      hashAtCall = window.location.hash;
+      return member();
+    });
     renderJoin();
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/play"));
+    expect(hashAtCall).toBe("");
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
     expect(m.acceptInvite).toHaveBeenCalledTimes(1);
     expect(m.acceptInvite).toHaveBeenCalledWith("tok123");
     expect(window.location.hash).toBe("");
@@ -223,6 +247,28 @@ describe("/join", () => {
       "Попросите взрослого выпустить новую",
     );
     expect(replace).not.toHaveBeenCalled();
+    expect(window.location.hash).toBe("");
+  });
+
+  it.each([422])("treats %i as an invalid link too", async (status) => {
+    open("#huge");
+    m.acceptInvite.mockRejectedValue(new api.ApiError("http", status));
+    renderJoin();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Попросите взрослого выпустить новую",
+    );
+  });
+
+  it.each([
+    ["network", new api.ApiError("network", 0)],
+    ["5xx", new api.ApiError("http", 503)],
+    ["parse", new api.ApiError("parse", 200)],
+  ])("asks to retry on %s failure and still clears the token", async (_n, error) => {
+    open("#tok");
+    m.acceptInvite.mockRejectedValue(error);
+    renderJoin();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось войти");
+    expect(window.location.hash).toBe("");
   });
 
   it("shows the same state without a token and does not call the API", async () => {

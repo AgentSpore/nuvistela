@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { acceptInvite, ApiError } from "@/lib/api";
 
+/** 401: invalid, expired or used token; 422: malformed (e.g. oversized) token. */
+const REJECTED = new Set([401, 422]);
+
 type State = "working" | "invalid" | "failed";
 
 /** Consumes the invite token from the URL fragment: a POST, so link previews cannot burn it. */
@@ -28,7 +31,7 @@ export function Join() {
     attempt.then(
       () => router.replace("/play"),
       (e: unknown) =>
-        setState(e instanceof ApiError && e.status === 401 ? "invalid" : "failed"),
+        setState(e instanceof ApiError && REJECTED.has(e.status) ? "invalid" : "failed"),
     );
   }, [router]);
 
