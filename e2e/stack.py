@@ -129,11 +129,11 @@ def running_stack() -> Iterator[Stack]:
             frontend = _spawn(
                 ["node", "server.js"],
                 STANDALONE,
-                {**fe_env, "PORT": str(fe_port), "HOSTNAME": "127.0.0.1"},
+                {**fe_env, "PORT": str(fe_port), "HOSTNAME": "0.0.0.0"},
                 "frontend",
             )
             procs.append(frontend)
-            _wait(f"http://127.0.0.1:{fe_port}/en", frontend)
+            _wait(f"http://127.0.0.1:{fe_port}/", frontend)
             yield Stack(f"http://127.0.0.1:{fe_port}", f"http://127.0.0.1:{be_port}")
         finally:
             for p in reversed(procs):
