@@ -6,7 +6,7 @@ import shutil
 import socket
 import subprocess
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -98,7 +98,7 @@ def _compile_frontend(env: dict[str, str]) -> None:
 
 
 @contextmanager
-def running_stack() -> Iterator[Stack]:
+def running_stack() -> Generator[Stack]:
     """Start everything, yield the origins, tear it all down."""
     base_env = {k: v for k, v in os.environ.items() if k != "OPENROUTER_API_KEY"}
     procs: list[subprocess.Popen] = []

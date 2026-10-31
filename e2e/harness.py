@@ -5,7 +5,13 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+from playwright.sync_api import (
+    Browser,
+    BrowserContext,
+    Page,
+    StorageState,
+    sync_playwright,
+)
 
 from stack import Stack, running_stack
 
@@ -33,7 +39,7 @@ def new_page(browser: Browser, stack: Stack) -> Iterator[Callable[..., Page]]:
     """Each call opens a page in a fresh context: own cookies, like another person's device."""
     contexts: list[BrowserContext] = []
 
-    def make(state: dict | None = None) -> Page:
+    def make(state: StorageState | None = None) -> Page:
         ctx = browser.new_context(base_url=stack.site, storage_state=state)
         contexts.append(ctx)
         return ctx.new_page()

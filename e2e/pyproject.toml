@@ -15,3 +15,7 @@ dependencies = [
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-p no:cacheprovider -p harness"
+
+[tool.ty.environment]
+# launcher.py runs in the backend venv: let ty resolve its imports there too
+extra-paths = ["../backend", "../backend/.venv/lib/python3.13/site-packages"]
