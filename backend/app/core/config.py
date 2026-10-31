@@ -20,8 +20,10 @@ class Settings(BaseSettings):
     agent_history_limit: int = Field(default=40, ge=1)
     agent_max_text_chars: int = Field(default=2000, ge=1)
     agent_timeout_s: float = 60.0
-    telegram_bot_token: str | None = None
-    telegram_webhook_secret: str | None = None
+    telegram_bot_token: SecretStr | None = None
+    telegram_webhook_secret: SecretStr | None = None
+    telegram_webhook_url: str | None = None
+    telegram_max_concurrent_updates: int = Field(default=8, ge=1)
 
     @model_validator(mode="after")
     def _history_covers_request_pairs(self) -> Self:

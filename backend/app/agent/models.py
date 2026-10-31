@@ -14,7 +14,7 @@ class AgentEvent:
     `kind` and `channel` reach the model out of band (dynamic instructions built from deps), never
     as a prefix of `text`, so family text cannot imitate them. `family_id` must not be `*` or
     contain `|` (the harness spend scope rejects those), so use UUIDs. `member_id` is who sent it;
-    None for events the system raises itself.
+    None for events the system raises itself and for channel users not mapped to a member yet.
     """
 
     family_id: str
