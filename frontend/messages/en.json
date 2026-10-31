@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "title": "Kinsaga: a family game",
+    "description": "A family game where real chores unlock chapters of your shared story."
+  },
+  "landing": {
+    "title": "Kinsaga",
+    "pitch": "A family game where real chores unlock chapters of your shared story."
+  },
+  "locale": {
+    "label": "Language",
+    "ru": "Русский",
+    "en": "English"
+  }
+}
