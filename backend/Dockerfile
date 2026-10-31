@@ -10,5 +10,6 @@ USER bumbli
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
   CMD python -c "import os,urllib.request as u; u.urlopen(f'http://127.0.0.1:{os.environ[\"PORT\"]}/health', timeout=2)"
-# --no-access-log: GET /api/v1/invite/<token> carries a login secret in the path.
+# --no-access-log: keep request lines out of logs. Invite tokens travel in a POST body now,
+# but session cookies and future paths must not leak into access logs either.
 CMD ["sh", "-c", "exec uvicorn --no-access-log --factory app.main:create_app --host 0.0.0.0 --port ${PORT}"]

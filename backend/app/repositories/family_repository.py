@@ -62,6 +62,15 @@ class FamilyRepository:
         ).one()
         return self._member(row)
 
+    async def get_family(self, family_id: UUID) -> Family | None:
+        row = (
+            await self._conn.execute(
+                text("SELECT id, title, locale, created_at FROM families WHERE id = :id"),
+                {"id": family_id},
+            )
+        ).first()
+        return Family(row.id, row.title, row.locale, row.created_at) if row else None
+
     async def get_member(self, member_id: UUID) -> Member | None:
         row = (
             await self._conn.execute(

@@ -11,15 +11,17 @@ EventKind = Literal["message", "quest_event", "schedule"]
 class AgentEvent:
     """Something that wakes the game master. `family_id` scopes tools; it is never sent as text.
 
-    K2 decisions, deliberately open: `kind`/`channel` travel as a text prefix in the user message,
-    so family text can imitate it; and `family_id` must not be `*` or contain `|` (the harness
-    spend scope rejects those), so use UUIDs.
+    `kind` and `channel` reach the model out of band (dynamic instructions built from deps), never
+    as a prefix of `text`, so family text cannot imitate them. `family_id` must not be `*` or
+    contain `|` (the harness spend scope rejects those), so use UUIDs. `member_id` is who sent it;
+    None for events the system raises itself.
     """
 
     family_id: str
     channel: Channel
     kind: EventKind
     text: str
+    member_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

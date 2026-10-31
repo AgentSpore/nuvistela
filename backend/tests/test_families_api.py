@@ -21,7 +21,7 @@ class Person:
 
 
 def _token(invite_url: str) -> str:
-    assert invite_url.startswith("/join#")
+    assert invite_url.endswith("/join#" + invite_url.split("#", 1)[1])
     return invite_url.split("#", 1)[1]
 
 
@@ -322,9 +322,9 @@ async def test_concurrent_accepts_yield_one_session(
     url = created.json()["invite_url"]
     member_id = created.json()["member"]["id"]
     before = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
-    results = await asyncio.gather(*(_accept(client, url) for _ in range(2)))
+    results = await asyncio.gather(*(_accept(client, url) for _ in range(8)))
     after = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
-    assert sorted(r.status_code for r in results) == [200, 401]
+    assert sorted(r.status_code for r in results) == [200] + [401] * 7
     assert after - before == 1
 
 
@@ -366,3 +366,22 @@ async def test_login_purges_members_expired_sessions(
     assert (await _accept(client, created.json()["invite_url"])).status_code == 200
     rows = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
     assert rows == 1
+
+
+@pytest.mark.parametrize(("locale", "prefix"), [("ru", "/join#"), ("en", "/en/join#")])
+async def test_invite_url_carries_family_locale_prefix(
+    client: AsyncClient, locale: str, prefix: str
+) -> None:
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Papa", "locale": locale}
+    )
+    assert created.json()["invite_url"].startswith(prefix)
+    cookie = await _login(client, created.json()["invite_url"])
+    family_id = created.json()["family_id"]
+    added = await client.post(
+        f"/api/v1/families/{family_id}/members", json=CHILD_BODY, headers=cookie
+    )
+    assert added.json()["invite_url"].startswith(prefix)
+    child_id = added.json()["member"]["id"]
+    again = await client.post(f"/api/v1/members/{child_id}/invite", headers=cookie)
+    assert again.json()["invite_url"].startswith(prefix)

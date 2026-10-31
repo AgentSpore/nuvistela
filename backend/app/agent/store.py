@@ -5,6 +5,8 @@ from typing import Protocol
 
 from pydantic_ai.messages import ModelMessage
 
+from app.agent.models import AgentEvent
+
 
 class ConversationStore(Protocol):
     """Per-family message history. Implementations must use the SDK message serialization."""
@@ -17,6 +19,6 @@ class ConversationStore(Protocol):
         """
         ...
 
-    async def append(self, family_id: str, messages: Sequence[ModelMessage]) -> None:
-        """Persist the messages produced by one successful turn."""
+    async def append(self, event: AgentEvent, messages: Sequence[ModelMessage]) -> None:
+        """Persist the messages produced by one successful turn of `event`."""
         ...

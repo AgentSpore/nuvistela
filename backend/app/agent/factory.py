@@ -1,10 +1,10 @@
 """Build the game master: a pydantic-ai Agent on OpenRouter with ZDR-only routing."""
 
 import httpx2
-from pydantic_ai import Agent
+from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openrouter import OpenRouterModel, OpenRouterModelSettings
 from pydantic_ai.providers.openrouter import OpenRouterProvider
-from pydantic_ai_harness.spend import Budget, SpendLimits, SpendStore
+from pydantic_ai_harness.spend import BatchSpendStore, Budget, SpendLimits, SpendStore
 
 from app.agent.deps import GameDeps
 from app.agent.errors import AgentConfigError
@@ -20,11 +20,16 @@ INSTRUCTIONS = (
 )
 
 
+def event_instructions(ctx: RunContext[GameDeps]) -> str:
+    """Trusted event metadata. It comes from deps, which only adapters fill; never from text."""
+    return f"Current event: {ctx.deps.kind} via {ctx.deps.channel}."
+
+
 def build_game_master(
     settings: Settings,
     *,
     http_client: httpx2.AsyncClient | None = None,
-    spend_store: SpendStore | None = None,
+    spend_store: SpendStore | BatchSpendStore | None = None,
 ) -> Agent[GameDeps, str]:
     """Create the agent from settings.
 
@@ -54,7 +59,7 @@ def build_game_master(
     return Agent(
         OpenRouterModel(settings.family_llm_model, provider=provider),
         deps_type=GameDeps,
-        instructions=INSTRUCTIONS,
+        instructions=[INSTRUCTIONS, event_instructions],
         model_settings=model_settings,
         capabilities=[game_tools(), spend],
         retries=0,

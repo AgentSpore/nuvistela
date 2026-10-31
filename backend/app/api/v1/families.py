@@ -16,8 +16,10 @@ from app.services.family_service import FamilyService
 router = APIRouter(prefix="/api/v1")
 
 
-def _invite_url(token: str) -> str:
-    return f"/join#{token}"  # fragment: never sent to a server or logged
+def _invite_url(token: str, locale: str) -> str:
+    """Fragment: never sent to a server or logged. ru is the default locale, so it has no prefix."""
+    prefix = "" if locale == "ru" else f"/{locale}"
+    return f"{prefix}/join#{token}"
 
 
 def _set_session_cookie(response: Response, request: Request, session: str) -> None:
@@ -40,7 +42,9 @@ async def create_family(
     )
     _set_session_cookie(response, request, session)
     return FamilyCreatedResponse(
-        family_id=family.id, member=MemberResponse.of(member), invite_url=_invite_url(token)
+        family_id=family.id,
+        member=MemberResponse.of(member),
+        invite_url=_invite_url(token, family.locale),
     )
 
 
@@ -49,7 +53,8 @@ async def add_member(
     family_id: UUID, body: AddMemberRequest, actor: CurrentMember, service: FamilyServiceDep
 ) -> InviteResponse:
     member, token = await service.add_member(actor, family_id, body.to_domain())
-    return InviteResponse(member=MemberResponse.of(member), invite_url=_invite_url(token))
+    locale = await service.family_locale(family_id)
+    return InviteResponse(member=MemberResponse.of(member), invite_url=_invite_url(token, locale))
 
 
 @router.get("/families/{family_id}/members")
@@ -63,7 +68,8 @@ async def list_members(
 async def reissue_invite(
     member_id: UUID, actor: CurrentMember, service: FamilyServiceDep
 ) -> dict[str, str]:
-    return {"invite_url": _invite_url(await service.reissue_invite(actor, member_id))}
+    token = await service.reissue_invite(actor, member_id)
+    return {"invite_url": _invite_url(token, await service.family_locale(actor.family_id))}
 
 
 @router.post("/invite/accept")
