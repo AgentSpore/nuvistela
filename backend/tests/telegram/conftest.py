@@ -1,3 +1,4 @@
+import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import cast
@@ -32,6 +33,10 @@ class FakeSender:
 
     def __init__(self) -> None:
         self.sent: list[Sent] = []
+        self.admins: set[int] = {5}  # the default sender of `update()`
+
+    async def chat_member_status(self, chat_id: int, user_id: int) -> str:
+        return "administrator" if user_id in self.admins else "member"
 
     async def me(self) -> BotIdentity:
         return BOT
@@ -90,6 +95,11 @@ def update(update_id: int, text: str, chat_id: int = -100, **message) -> dict:
         "from": {"id": 5, "is_bot": False, "first_name": "Pa"},
         "text": text,
     } | message
+    if "entities" not in body:  # Telegram marks every @username of the text as an entity
+        body["entities"] = [
+            {"type": "mention", "offset": m.start(), "length": len(m.group())}
+            for m in re.finditer(r"@\w+", text)
+        ]
     return {"update_id": update_id, "message": body}
 
 

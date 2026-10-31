@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 from aiogram import Bot
+from aiogram.exceptions import AiogramError
+from aiogram.utils.token import TokenValidationError
 from fastapi import FastAPI
 from pydantic_ai import Agent
 from pydantic_ai_harness.spend import PostgresSpendStore
@@ -60,8 +62,18 @@ def _build_telegram(
     """None (route answers 404) unless the bot token and the webhook secret are both set."""
     if not (settings.telegram_bot_token and settings.telegram_webhook_secret):
         return None
-    sender = sender or AiogramSender(Bot(settings.telegram_bot_token.get_secret_value()))
-    return TelegramRuntime(UpdateRunner(TelegramHandler(app.state, sender).process), sender)
+    try:
+        sender = sender or AiogramSender(Bot(settings.telegram_bot_token.get_secret_value()))
+    except (AiogramError, TokenValidationError) as exc:
+        logger.warning("Telegram is misconfigured (%s): starting without it", type(exc).__name__)
+        return None
+    return TelegramRuntime(
+        UpdateRunner(
+            TelegramHandler(app.state, sender).process,
+            max_concurrent=settings.telegram_max_concurrent_updates,
+        ),
+        sender,
+    )
 
 
 def create_app(

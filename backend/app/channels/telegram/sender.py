@@ -18,6 +18,8 @@ class TelegramSender(Protocol):
 
     async def send(self, chat_id: int, text: str, reply_to: int | None = None) -> None: ...
 
+    async def chat_member_status(self, chat_id: int, user_id: int) -> str: ...
+
 
 class AiogramSender:
     def __init__(self, bot: Bot) -> None:
@@ -34,6 +36,9 @@ class AiogramSender:
             else None
         )
         await self._bot.send_message(chat_id, text, reply_parameters=reply)
+
+    async def chat_member_status(self, chat_id: int, user_id: int) -> str:
+        return (await self._bot.get_chat_member(chat_id, user_id)).status
 
     async def close(self) -> None:
         await self._bot.session.close()

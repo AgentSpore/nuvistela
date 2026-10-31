@@ -12,8 +12,9 @@ class TurnRunner(Protocol):
 class AgentGateway:
     """One inbound event in, one reply out; the adapter delivers the reply to its channel.
 
-    Adapters resolve the sender to a member first, so `event.family_id` always comes from an
-    authenticated member, never from channel input.
+    `event.family_id` comes from an authenticated member or from a linked channel binding (a
+    Telegram chat bound to a family), never from message text. `member_id` is None for events
+    from channel users who are not mapped to a member yet.
     """
 
     def __init__(self, runtime: TurnRunner) -> None:

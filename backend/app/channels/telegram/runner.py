@@ -17,9 +17,15 @@ class UpdateRunner:
     a restart can run twice. A persistent dedupe (table keyed by update_id) is a later stage.
     """
 
-    def __init__(self, process: Callable[[Update], Awaitable[None]], max_seen: int = 1000) -> None:
+    def __init__(
+        self,
+        process: Callable[[Update], Awaitable[None]],
+        max_seen: int = 1000,
+        max_concurrent: int = 8,
+    ) -> None:
         self._process = process
         self._max_seen = max_seen
+        self._slots = asyncio.Semaphore(max_concurrent)
         self._seen: OrderedDict[int, None] = OrderedDict()
         self._tasks: set[asyncio.Task[None]] = set()  # strong refs: the loop keeps only weak ones
 
@@ -41,7 +47,8 @@ class UpdateRunner:
 
     async def _run(self, update: Update) -> None:
         try:
-            await self._process(update)
+            async with self._slots:
+                await self._process(update)
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # noqa: BLE001 (task boundary: nobody awaits it, log class only)

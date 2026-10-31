@@ -27,3 +27,14 @@ uv run pytest -q
 
 Tests start Postgres through Testcontainers and need a running Docker. On colima set
 `TESTCONTAINERS_RYUK_DISABLED=true`.
+
+## Telegram
+
+Set in `.env` (names only here): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` (1-256 characters of `A-Za-z0-9_-`), `TELEGRAM_WEBHOOK_URL` (public `https://.../api/v1/telegram/webhook`), optional `TELEGRAM_MAX_CONCURRENT_UPDATES` (default 8). Without the token and the secret the webhook answers 404 and the rest of the app runs normally; an invalid token is logged by class and Telegram stays off.
+
+Register the webhook once, after the release is up: `python -m app.channels.telegram.set_webhook` (from `backend/`). It prints only `success` or `failure: <ErrorClass>`.
+
+Group chats:
+- Make the bot a group admin, or turn privacy off in BotFather (`/setprivacy`), so plain `@bot` mentions are delivered. With privacy on, only replies to the bot and commands reach it.
+- An adult gets a code on the site (`POST /api/v1/families/{id}/telegram/link-code`, valid 10 minutes, single use). A chat creator or admin sends `/link@<bot> <code>` in the group; in a private chat plain `/link <code>` works.
+- Ask the game master with `/ask@<bot> <question>`, by replying to the bot, or by mentioning `@<bot>`.

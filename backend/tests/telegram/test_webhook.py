@@ -133,7 +133,9 @@ async def test_duplicate_update_id_is_processed_once(tg, sender) -> None:
 
 async def test_unlinked_chat_addressing_bot_gets_link_hint(tg, sender) -> None:
     await post_update(tg, update(1, f"@{BOT.username} hello"))
-    assert [s.text for s in sender.sent] == ["link this chat first: /link <code> from the site"]
+    assert [s.text for s in sender.sent] == [
+        f"link this chat first: /link@{BOT.username} <code> from the site"
+    ]
 
 
 async def test_message_not_addressed_to_bot_is_ignored(tg, sender, agent) -> None:

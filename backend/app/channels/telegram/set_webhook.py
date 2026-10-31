@@ -1,16 +1,15 @@
 """One-off: register the webhook with Telegram. `python -m app.channels.telegram.set_webhook`.
 
-Reads TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET and TELEGRAM_WEBHOOK_URL from the environment.
+Reads TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET and TELEGRAM_WEBHOOK_URL through `Settings`.
 Prints only success or failure; the token and the Telegram error text are never printed.
 """
 
 import asyncio
-import os
 import sys
 
 from aiogram import Bot
 
-REQUIRED = ("TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "TELEGRAM_WEBHOOK_URL")
+from app.core.config import Settings
 
 
 async def register(token: str, secret: str, url: str) -> None:
@@ -22,18 +21,17 @@ async def register(token: str, secret: str, url: str) -> None:
 
 
 def main() -> int:
-    missing = [name for name in REQUIRED if not os.environ.get(name)]
-    if missing:
-        print(f"failure: missing {', '.join(missing)}")
-        return 2
     try:
-        asyncio.run(
-            register(
-                os.environ["TELEGRAM_BOT_TOKEN"],
-                os.environ["TELEGRAM_WEBHOOK_SECRET"],
-                os.environ["TELEGRAM_WEBHOOK_URL"],
-            )
+        settings = Settings()
+        token, secret, url = (
+            settings.telegram_bot_token,
+            settings.telegram_webhook_secret,
+            settings.telegram_webhook_url,
         )
+        if not (token and secret and url):
+            print("failure: set TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, TELEGRAM_WEBHOOK_URL")
+            return 2
+        asyncio.run(register(token.get_secret_value(), secret.get_secret_value(), url))
     except Exception as exc:  # noqa: BLE001 (CLI boundary: print the class, never the message)
         print(f"failure: {type(exc).__name__}")
         return 1
