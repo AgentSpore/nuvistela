@@ -15,3 +15,7 @@ class AgentBudgetExceededError(AgentError):
 
 class AgentUnavailableError(AgentError):
     """The model timed out, was unreachable or returned unusable output; safe to retry later."""
+
+
+class AgentBusyError(AgentError):
+    """Another turn of the same family is running; the caller may retry shortly."""

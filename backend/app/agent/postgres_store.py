@@ -14,6 +14,7 @@ from pydantic_ai.messages import (
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from app.agent.errors import AgentBusyError
 from app.agent.models import AgentEvent
 
 logger = logging.getLogger(__name__)
@@ -27,9 +28,9 @@ _LOAD = text(
     "SELECT content FROM agent_messages WHERE family_id = CAST(:family_id AS uuid)"
     " ORDER BY seq DESC LIMIT :limit"
 )
-# One conversation lock per family, released with the transaction: a family's turns run in
-# arrival order and each sees the previous turn's messages.
-_LOCK = text("SELECT pg_advisory_xact_lock(hashtextextended(:family_id, 0))")
+# One conversation lock per family, released with the transaction. Non-blocking: a waiter
+# would sit on a pooled connection, so a busy family is refused instead (AgentBusyError).
+_LOCK = text("SELECT pg_try_advisory_xact_lock(hashtextextended(:family_id, 0))")
 
 
 def _is_user_prompt(message: ModelMessage) -> bool:
@@ -45,8 +46,9 @@ class PostgresConversationStore:
         self._conn = conn
 
     async def load(self, family_id: str, limit: int) -> list[ModelMessage]:
-        """Take the family lock, then return the newest `limit` readable messages, oldest first."""
-        await self._conn.execute(_LOCK, {"family_id": family_id})
+        """Take the family lock (or raise AgentBusyError); return the newest readable messages."""
+        if not (await self._conn.execute(_LOCK, {"family_id": family_id})).scalar_one():
+            raise AgentBusyError("a turn is already running for this family")
         rows = await self._conn.execute(_LOAD, {"family_id": family_id, "limit": limit})
         messages: list[ModelMessage] = []
         skipped = 0

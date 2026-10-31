@@ -207,7 +207,9 @@ async def test_health_answers_while_turns_saturate_the_main_pool(postgres_url, a
         assert [r.status_code for r in results] == [200, 200, 200]
 
 
-async def test_concurrent_turns_of_one_family_are_serialized(client, agent, db_fetch) -> None:
+async def test_overlapping_turn_is_refused_and_its_retry_sees_the_first(
+    client, agent, db_fetch
+) -> None:
     cookie, family_id = await make_member(client)
     seen: list[list[str]] = []
 
@@ -228,12 +230,47 @@ async def test_concurrent_turns_of_one_family_are_serialized(client, agent, db_f
         first = asyncio.create_task(client.post(URL, json={"text": "A"}, headers=cookie))
         await asyncio.sleep(0.1)
         second = asyncio.create_task(client.post(URL, json={"text": "B"}, headers=cookie))
-        assert [r.status_code for r in await asyncio.gather(first, second)] == [200, 200]
+        assert [r.status_code for r in await asyncio.gather(first, second)] == [200, 409]
+        retry = await client.post(URL, json={"text": "B"}, headers=cookie)
+        assert retry.status_code == 200
     assert seen == [["A"], ["A", "B"]]
     rows = await db_fetch(
         "SELECT role FROM agent_messages WHERE family_id = $1::uuid ORDER BY seq", family_id
     )
     assert [r["role"] for r in rows] == ["user", "agent", "user", "agent"]
+
+
+async def test_second_turn_of_a_busy_family_gets_409_without_holding_a_connection(
+    postgres_url, agent
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        database_url=postgres_url,
+        cookie_secure=False,
+        db_pool_size=2,
+        db_max_overflow=0,
+    )
+    release = asyncio.Event()
+
+    async def model(messages, info):
+        if "slow" in str(messages[-1]):
+            await release.wait()
+        return ModelResponse(parts=[TextPart("ok")])
+
+    async for client in _client(create_app(settings, agent=agent)):
+        busy, _ = await make_member(client, "Busy")
+        other, _ = await make_member(client, "Other")
+        with agent.override(model=FunctionModel(model)):
+            running = asyncio.create_task(client.post(URL, json={"text": "slow"}, headers=busy))
+            await asyncio.sleep(0.3)
+            waiters = [client.post(URL, json={"text": "again"}, headers=busy) for _ in range(3)]
+            blocked = await asyncio.wait_for(asyncio.gather(*waiters), 2)
+            fine = await asyncio.wait_for(client.post(URL, json={"text": "hi"}, headers=other), 2)
+            release.set()
+            assert (await running).status_code == 200
+    assert [r.status_code for r in blocked] == [409, 409, 409]
+    assert blocked[0].json() == {"detail": "a turn is already running for this family"}
+    assert fine.status_code == 200
 
 
 async def test_corrupt_history_row_is_skipped_not_a_500(client, agent, db_fetch) -> None:

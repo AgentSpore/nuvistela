@@ -1,13 +1,14 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.agent.errors import AgentBudgetExceededError, AgentUnavailableError
+from app.agent.errors import AgentBudgetExceededError, AgentBusyError, AgentUnavailableError
 from app.domain.errors import Forbidden, NotFound, Unauthorized
 
 _STATUS: dict[type[Exception], int] = {Unauthorized: 401, Forbidden: 403, NotFound: 404}
 # Agent failures carry provider text; the client gets a fixed message instead.
 _AGENT: dict[type[Exception], tuple[int, str]] = {
     AgentBudgetExceededError: (429, "the game master has reached today's limit"),
+    AgentBusyError: (409, "a turn is already running for this family"),
     AgentUnavailableError: (503, "the game master is unavailable, try again later"),
 }
 

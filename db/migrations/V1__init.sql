@@ -51,5 +51,4 @@ CREATE TABLE agent_messages (
     content    jsonb NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX agent_messages_family_created_idx ON agent_messages (family_id, created_at);
 CREATE INDEX agent_messages_member_id_idx ON agent_messages (member_id);
