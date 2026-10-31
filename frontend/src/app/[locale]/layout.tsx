@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { AppNav } from "@/components/app-nav";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
@@ -24,9 +25,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
   return (
     <html lang={locale}>
-      <body className="relative bg-paper text-ink antialiased">
+      <body className="bg-paper text-ink antialiased">
         <NextIntlClientProvider>
-          <LocaleSwitcher />
+          <header className="mx-auto flex max-w-2xl items-center justify-between px-2 py-2 sm:px-4">
+            <AppNav />
+            <LocaleSwitcher />
+          </header>
           {children}
         </NextIntlClientProvider>
       </body>

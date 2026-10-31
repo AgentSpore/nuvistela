@@ -11,5 +11,91 @@
     "label": "Language",
     "ru": "Русский",
     "en": "English"
+  },
+  "nav": {
+    "label": "Sections",
+    "new": "New family",
+    "play": "Play",
+    "family": "Family"
+  },
+  "gate": {
+    "loading": "Loading…",
+    "error": "Could not load data. Try refreshing the page.",
+    "anonymous": "You are not signed in yet. Open your invite link or create a family.",
+    "create": "Create a family"
+  },
+  "errors": {
+    "required": "Fill in this field",
+    "tooLong": "Value is too long",
+    "tagTooLong": "An interest must be at most 30 characters",
+    "tooMany": "At most 10 interests",
+    "roleMismatch": "The adult role only fits the adult age band",
+    "network": "Cannot reach the server. Check your connection and try again.",
+    "unauthorized": "Sign in with your invite link first.",
+    "forbidden": "Only adults can do this.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "invite": {
+    "linkFor": "Sign-in link for {name}",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy, select the link manually"
+  },
+  "member": {
+    "heading": "Add a member",
+    "name": "Name",
+    "band": "Age",
+    "role": "Role",
+    "interests": "Interests",
+    "interestsHint": "Comma-separated, up to 10",
+    "submit": "Add",
+    "bands": {
+      "3-5": "3–5 years",
+      "6-9": "6–9 years",
+      "10-13": "10–13 years",
+      "14-17": "14–17 years",
+      "adult": "Adult"
+    },
+    "roles": {
+      "adult": "Adult",
+      "child": "Child"
+    }
+  },
+  "new": {
+    "heading": "Create your family",
+    "title": "Family name",
+    "name": "Your name",
+    "interests": "Family interests",
+    "interestsHint": "Comma-separated, up to 10",
+    "submit": "Create family",
+    "linksHeading": "Sign-in links",
+    "linksHint": "Send everyone their own link. Opening it signs them into the game. Each link is personal, do not share it."
+  },
+  "play": {
+    "title": "Play",
+    "members": "Family",
+    "chat": "Chat with the game master",
+    "empty": "Write the game master your first message.",
+    "input": "Message to the game master",
+    "placeholder": "Message…",
+    "send": "Send",
+    "note": {
+      "soon": "The game master is coming soon. Nobody has read your message yet.",
+      "failed": "Could not send the message. Please try again."
+    },
+    "you": "You",
+    "agent": "Game master"
+  },
+  "family": {
+    "title": "Family",
+    "reissue": "New link",
+    "reissued": "The previous link no longer works.",
+    "reissueFor": "New link for {name}"
+  },
+  "join": {
+    "working": "Signing you in…",
+    "invalid": "This link is invalid or already used. Ask an adult for a new one.",
+    "failed": "Could not sign you in. Check your connection and open the link again.",
+    "create": "Create a family"
   }
 }

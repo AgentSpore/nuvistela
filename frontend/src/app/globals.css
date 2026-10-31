@@ -4,6 +4,11 @@
   --color-ink: #1f2933;
   --color-paper: #fbf8f3;
   --color-accent: #1d5f5a;
+  --color-card: #ffffff;
+  --color-line: #ded5c6;
+  --color-muted: #52606d;
+  --color-danger: #b42318;
+  --color-honey: #f2b84b;
 }
 
 @media (prefers-reduced-motion: reduce) {
