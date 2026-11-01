@@ -25,8 +25,8 @@ function Wrap({
   children,
 }: FieldProps & { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="font-medium">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[0.95rem] font-semibold">
         {label}
       </label>
       {children}
@@ -36,7 +36,7 @@ function Wrap({
         </p>
       )}
       {error && (
-        <p id={`${id}-err`} className="text-sm font-medium text-danger">
+        <p id={`${id}-err`} className="rise text-sm font-semibold text-danger">
           {error}
         </p>
       )}
@@ -69,7 +69,7 @@ export function SelectField({ value, onChange, options, ...f }: SelectProps) {
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(f.error)}
         aria-describedby={describedBy(f.id, f.error, f.hint)}
-        className={inputCls}
+        className={`${inputCls} cursor-pointer`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

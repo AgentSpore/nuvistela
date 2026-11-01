@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { AppNav } from "@/components/app-nav";
-import { LocaleSwitcher } from "@/components/locale-switcher";
+import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
+import "@fontsource-variable/onest";
+import "@fontsource-variable/literata";
 import "../globals.css";
 
 type Props = { children: React.ReactNode; params: Promise<{ locale: string }> };
@@ -12,6 +13,14 @@ type Props = { children: React.ReactNode; params: Promise<{ locale: string }> };
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f3e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#1d1812" },
+  ],
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -25,12 +34,9 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
   return (
     <html lang={locale}>
-      <body className="bg-paper text-ink antialiased">
+      <body className="min-h-dvh antialiased">
         <NextIntlClientProvider>
-          <header className="mx-auto flex max-w-2xl items-center justify-between px-2 py-2 sm:px-4">
-            <AppNav />
-            <LocaleSwitcher />
-          </header>
+          <SiteHeader />
           {children}
         </NextIntlClientProvider>
       </body>
