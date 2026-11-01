@@ -20,9 +20,11 @@ INSTRUCTIONS = (
 )
 
 
-def event_instructions(ctx: RunContext[GameDeps]) -> str:
+async def event_instructions(ctx: RunContext[GameDeps]) -> str:
     """Trusted event metadata. It comes from deps, which only adapters fill; never from text."""
-    return f"Current event: {ctx.deps.kind} via {ctx.deps.channel}."
+    text = f"Current event: {ctx.deps.kind} via {ctx.deps.channel}."
+    world = await ctx.deps.worlds.summary(ctx.deps.family_id) if ctx.deps.worlds else None
+    return f"{text}\n{world}" if world else text
 
 
 def build_game_master(
