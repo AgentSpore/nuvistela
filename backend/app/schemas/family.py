@@ -40,6 +40,7 @@ class MemberResponse(BaseModel):
     age_band: AgeBand
     role: Role
     interests: list[str]
+    is_owner: bool
 
     @classmethod
     def of(cls, m: Member) -> Self:
@@ -50,6 +51,7 @@ class MemberResponse(BaseModel):
             age_band=m.age_band,
             role=m.role,
             interests=list(m.interests),
+            is_owner=m.is_owner,
         )
 
 
