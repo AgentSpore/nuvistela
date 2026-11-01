@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -43,7 +44,8 @@ class FamilyService:
         invite, invite_hash = self._new_token()
         adult = NewMember(first_adult, AgeBand.ADULT, Role.ADULT, interests)
         member = await self._repo.add_member(family.id, adult, invite_hash, self._invite_expiry())
-        return family, member, invite, await self._open_session(member.id)
+        await self._repo.set_owner(family.id, member.id)
+        return family, replace(member, is_owner=True), invite, await self._open_session(member.id)
 
     async def accept_invite(self, invite: str) -> tuple[Member, str]:
         """Consume a single-use invite; return the member and a new session token."""
@@ -84,8 +86,9 @@ class FamilyService:
             raise NotFound("member not found")
         if actor.role is not Role.ADULT:
             raise Forbidden("only adults can reissue invites")
-        # (Q1 default) an adult reissues only for a child; another adult's login stays theirs.
-        if target.role is Role.ADULT and target.id != actor.id:
+        # Owner decision 01.11: the family owner reissues for any member; other adults only for
+        # children and themselves.
+        if target.role is Role.ADULT and target.id != actor.id and not actor.is_owner:
             raise Forbidden("cannot reissue another adult's invite")
         invite, invite_hash = self._new_token()
         await self._repo.replace_invite(member_id, invite_hash, self._invite_expiry())
