@@ -36,7 +36,7 @@ class WorldWorker:
             return True
         try:
             world = await self._generator.generate(self._spec(job, members))
-        except Exception as exc:  # any failure is one attempt
+        except Exception as exc:  # noqa: BLE001 (generator boundary: every failure must count as an attempt)
             # Class name only: provider text may carry request details.
             logger.warning("world job failed: %s attempt=%s", type(exc).__name__, job.attempts)
             await self._record_failure(job, type(exc).__name__, members)

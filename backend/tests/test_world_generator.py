@@ -38,7 +38,7 @@ async def test_world_request_carries_zdr_and_require_parameters() -> None:
 
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
     gen = build_world_generator(SETTINGS, http_client=client)
-    with pytest.raises(Exception):  # noqa: B017, PT011 - only the outgoing request is under test
+    with pytest.raises(Exception):  # noqa: B017, PT011 (failure type not under test: the 500 reply is only a stop)
         await gen.generate(spec([str(uuid4())]))
     (body,) = seen
     assert body["model"] == "vendor/world-x"
