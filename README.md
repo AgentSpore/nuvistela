@@ -43,3 +43,11 @@ Group chats:
 - An adult gets a code on the site (`POST /api/v1/families/{id}/telegram/link-code`, valid 10 minutes, single use). A chat creator or admin sends `/link@<bot> <code>` in the group; in a private chat plain `/link <code>` works.
 - An admin who posts anonymously (as the group) must switch anonymity off to use `/link`: Telegram then reports the group, not the person, as the sender. A bad webhook secret format disables Telegram at startup (logged), like a bad token.
 - Ask the game master with `/ask@<bot> <question>`, by replying to the bot, or by mentioning `@<bot>`.
+
+## Funnel
+
+Public endpoints: `POST /api/v1/waitlist` (email, family size, kids' age bands) and `POST /api/v1/events` (`landing_view` only). Funnel events live in the `events` table; they carry ids and coarse props, never email, names or message text.
+
+Report: `python -m app.cli.funnel --days 30` (from `backend/`) prints counts per step and conversion. `return_d1`/`return_d7` are counted per family created in the window; the day is a UTC calendar day.
+
+The app has no rate limiter: put a per-IP limit at the ingress before exposing these two endpoints publicly.

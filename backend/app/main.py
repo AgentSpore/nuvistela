@@ -21,6 +21,7 @@ from app.api.errors import register_error_handlers
 from app.api.health import router as health_router
 from app.api.v1.agent import router as agent_router
 from app.api.v1.families import router as families_router
+from app.api.v1.funnel import router as funnel_router
 from app.api.v1.telegram import router as telegram_router
 from app.api.v1.world import router as world_router
 from app.channels.telegram.handler import TelegramHandler
@@ -129,6 +130,15 @@ def _build_telegram(
     )
 
 
+def _include_routers(app: FastAPI) -> None:
+    app.include_router(health_router)
+    app.include_router(families_router)
+    app.include_router(agent_router)
+    app.include_router(funnel_router)
+    app.include_router(telegram_router)
+    app.include_router(world_router)
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -175,10 +185,6 @@ def create_app(
 
     app = FastAPI(title="Bumbli", lifespan=lifespan)
     app.state.settings = settings
-    app.include_router(health_router)
-    app.include_router(families_router)
-    app.include_router(agent_router)
-    app.include_router(telegram_router)
-    app.include_router(world_router)
+    _include_routers(app)
     register_error_handlers(app)
     return app

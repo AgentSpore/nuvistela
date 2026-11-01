@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from app.domain.errors import Unauthorized
 from app.domain.family import Member
 from app.repositories.family_repository import FamilyRepository
+from app.repositories.funnel_repository import FunnelRepository
 from app.repositories.job_repository import JobRepository
 from app.repositories.world_repository import WorldRepository
 from app.services.agent_gateway import AgentGateway
 from app.services.family_service import FamilyService
+from app.services.funnel_service import FunnelService
 from app.services.gateway_factory import build_agent_gateway
 from app.services.world_service import WorldService
 
@@ -21,14 +23,27 @@ async def get_conn(request: Request) -> AsyncIterator[AsyncConnection]:
     """One transaction per request: commit on success, roll back on error."""
     async with request.app.state.engine.begin() as conn:
         yield conn
+    # Reached only after a successful commit: a rolled-back activity write is retried next time.
+    if member_id := getattr(request.state, "activity_member_id", None):
+        FunnelService.mark_checked(member_id)
 
 
 # scope="function": commit runs before the response is sent, so a client holding
 # a 201 can always see the rows (default "request" scope commits after sending).
+def get_funnel_service(
+    conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")],
+) -> FunnelService:
+    return FunnelService(FunnelRepository(conn))
+
+
+FunnelServiceDep = Annotated[FunnelService, Depends(get_funnel_service, scope="function")]
+
+
 def get_family_service(
     conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")],
+    funnel: FunnelServiceDep,
 ) -> FamilyService:
-    return FamilyService(FamilyRepository(conn))
+    return FamilyService(FamilyRepository(conn), funnel)
 
 
 FamilyServiceDep = Annotated[FamilyService, Depends(get_family_service)]
@@ -45,11 +60,16 @@ WorldServiceDep = Annotated[WorldService, Depends(get_world_service)]
 
 async def current_member(
     service: FamilyServiceDep,
+    funnel: FunnelServiceDep,
+    request: Request,
     session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> Member:
     if not session:
         raise Unauthorized("not authenticated")
-    return await service.authenticate(session)
+    member = await service.authenticate(session)
+    await funnel.note_activity(member)
+    request.state.activity_member_id = member.id
+    return member
 
 
 CurrentMember = Annotated[Member, Depends(current_member)]
