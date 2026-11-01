@@ -9,6 +9,7 @@ import { Composer } from "@/components/composer";
 import { Gate } from "@/components/gate";
 import { Alert, type Tone } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { BeeMark } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -16,8 +17,19 @@ let nextId = 0;
 
 function MembersStrip({ familyId }: { familyId: string }) {
   const t = useTranslations("play");
-  const { members, failed, loaded } = useMembers(familyId);
-  if (failed) return null;
+  const tf = useTranslations("family");
+  const { members, failed, loaded, reload } = useMembers(familyId);
+  if (failed)
+    return (
+      <Alert
+        title={tf("loadFailed")}
+        action={
+          <Button variant="ghost" onClick={reload}>
+            {tf("retry")}
+          </Button>
+        }
+      />
+    );
   if (!loaded) return <Skeleton className="h-9 w-64 max-w-full !rounded-full" />;
   return (
     <ul aria-label={t("members")} className="flex flex-wrap gap-2">
@@ -75,32 +87,83 @@ const NOTE_TONE: Partial<Record<AgentNote, Tone>> = {
   unavailable: "info",
 };
 
+const NEAR_BOTTOM_PX = 80;
+
+/** Keeps the log pinned to the newest line unless the reader scrolled up to reread. */
+function useStickyScroll(deps: unknown[]) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const stuck = useRef(true);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el && stuck.current) el.scrollTop = el.scrollHeight;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are the caller's explicit scroll triggers
+  }, deps);
+  const onScroll = () => {
+    const el = scroller.current;
+    if (el)
+      stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+  };
+  return { scroller, onScroll, stick: () => (stuck.current = true) };
+}
+
+type LogProps = {
+  me: Member;
+  messages: Message[];
+  busy: boolean;
+  note: AgentNote | null;
+};
+
+function ChatLog({ me, messages, busy, note }: LogProps) {
+  const t = useTranslations("play");
+  return (
+    <>
+      {messages.length === 0 && !busy && <EmptyChat />}
+      <div role="log" aria-live="polite">
+        <ol className="flex flex-col gap-3.5">
+          {messages.map((x) => (
+            <ChatMessage
+              key={x.id}
+              message={x}
+              senderId={me.id}
+              senderName={x.from === "me" ? me.display_name : t("agent")}
+            />
+          ))}
+        </ol>
+      </div>
+      {busy && <Typing />}
+      {note && (
+        <Alert tone={NOTE_TONE[note] ?? "danger"} title={t(`noteTitle.${note}`)}>
+          {`${t(`note.${note}`)} ${t("restored")}`}
+        </Alert>
+      )}
+    </>
+  );
+}
+
+const append = (m: Message) => (l: Message[]) => [...l, m];
+
 function Chat({ me }: { me: Member }) {
   const t = useTranslations("play");
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [note, setNote] = useState<AgentNote | null>(null);
   const [busy, setBusy] = useState(false);
-  const scroller = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = scroller.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, busy, note]);
+  const { scroller, onScroll, stick } = useStickyScroll([messages, busy, note]);
 
   async function send() {
     const text = draft.trim();
     const mine: Message = { id: `m${nextId++}`, from: "me", text };
-    setMessages((l) => [...l, mine]);
+    stick();
+    setMessages(append(mine));
     setDraft("");
     setNote(null);
     setBusy(true);
     try {
       const { reply } = await sendAgentMessage(text);
-      setMessages((l) => [...l, { id: `m${nextId++}`, from: "agent", text: reply }]);
+      setMessages(append({ id: `m${nextId++}`, from: "agent", text: reply }));
     } catch (err) {
       setMessages((l) => l.filter((x) => x.id !== mine.id));
-      setDraft((d) => d || text);
+      setDraft((d) => (d ? `${text}\n${d}` : text));
       setNote(agentNoteKey(err));
     }
     setBusy(false);
@@ -113,27 +176,10 @@ function Chat({ me }: { me: Member }) {
     >
       <div
         ref={scroller}
+        onScroll={onScroll}
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-5"
       >
-        {messages.length === 0 && !busy && <EmptyChat />}
-        <div role="log" aria-live="polite">
-          <ol className="flex flex-col gap-3.5">
-            {messages.map((x) => (
-              <ChatMessage
-                key={x.id}
-                message={x}
-                senderId={me.id}
-                senderName={x.from === "me" ? me.display_name : t("agent")}
-              />
-            ))}
-          </ol>
-        </div>
-        {busy && <Typing />}
-        {note && (
-          <Alert tone={NOTE_TONE[note] ?? "danger"} title={t(`noteTitle.${note}`)}>
-            {`${t(`note.${note}`)} ${t("restored")}`}
-          </Alert>
-        )}
+        <ChatLog me={me} messages={messages} busy={busy} note={note} />
       </div>
       <Composer value={draft} onChange={setDraft} onSend={send} busy={busy} />
     </section>

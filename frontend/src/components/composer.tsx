@@ -31,7 +31,8 @@ export function Composer({ value, onChange, onSend, busy }: Props) {
   }, [value]);
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+    if (e.key !== "Enter" || e.shiftKey) return;
+    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
     e.preventDefault();
     if (canSend) onSend();
   }

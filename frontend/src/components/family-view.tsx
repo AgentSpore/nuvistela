@@ -19,48 +19,59 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type RowProps = { member: Member; isSelf: boolean; canReissue: boolean };
 
-function MemberRow({ member, isSelf, canReissue: allowed }: RowProps) {
+function MemberHead({ member, isSelf }: { member: Member; isSelf: boolean }) {
   const t = useTranslations("family");
   const tm = useTranslations("member");
+  return (
+    <div className="flex items-center gap-3.5">
+      <Avatar id={member.id} name={member.display_name} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-lg leading-tight font-semibold">
+          {member.display_name}
+        </p>
+        <p className="mt-0.5 text-sm text-muted">
+          {member.role === "adult"
+            ? tm("roles.adult")
+            : `${tm("roles.child")}, ${tm(`bands.${member.age_band}`)}`}
+        </p>
+      </div>
+      <div className="flex flex-col items-end gap-1.5">
+        {member.is_owner && (
+          <Chip tone="honey">
+            <CrownIcon />
+            {t("owner")}
+          </Chip>
+        )}
+        {isSelf && <Chip>{t("you")}</Chip>}
+      </div>
+    </div>
+  );
+}
+
+function useReissue(memberId: string) {
   const te = useTranslations("errors");
   const [url, setUrl] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
   async function reissue() {
     setFailure(null);
     setBusy(true);
     try {
-      setUrl(absoluteInvite((await reissueInvite(member.id)).invite_url));
+      setUrl(absoluteInvite((await reissueInvite(memberId)).invite_url));
     } catch (err) {
       setFailure(te(errorKey(err)));
     }
     setBusy(false);
   }
+  return { url, failure, busy, reissue };
+}
+
+function MemberRow({ member, isSelf, canReissue: allowed }: RowProps) {
+  const t = useTranslations("family");
+  const { url, failure, busy, reissue } = useReissue(member.id);
   return (
     <li className={`${cardCls} flex flex-col gap-4 !p-4 sm:!p-5`}>
-      <div className="flex items-center gap-3.5">
-        <Avatar id={member.id} name={member.display_name} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-lg leading-tight font-semibold">
-            {member.display_name}
-          </p>
-          <p className="mt-0.5 text-sm text-muted">
-            {member.role === "adult"
-              ? tm("roles.adult")
-              : `${tm("roles.child")}, ${tm(`bands.${member.age_band}`)}`}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1.5">
-          {member.is_owner && (
-            <Chip tone="honey">
-              <CrownIcon />
-              {t("owner")}
-            </Chip>
-          )}
-          {isSelf && <Chip>{t("you")}</Chip>}
-        </div>
-      </div>
+      <MemberHead member={member} isSelf={isSelf} />
       {allowed && (
         <div>
           <Button
@@ -95,6 +106,38 @@ function RosterSkeleton() {
   );
 }
 
+function AdultPanel({
+  me,
+  links,
+  onAdded,
+}: {
+  me: Member;
+  links: Link[];
+  onAdded: (i: Invite) => void;
+}) {
+  const t = useTranslations("family");
+  return (
+    <div className="flex flex-col gap-6">
+      <div className={cardCls}>
+        {links.length > 0 && (
+          <>
+            <h2 className="mb-4 font-display text-xl font-semibold">
+              {t("invitesHeading")}
+            </h2>
+            <ul className="mb-6 flex flex-col gap-4 border-b border-line pb-6">
+              {links.map((l) => (
+                <InviteLink key={l.id} id={l.id} name={l.name} url={l.url} />
+              ))}
+            </ul>
+          </>
+        )}
+        <MemberForm familyId={me.family_id} onAdded={onAdded} />
+      </div>
+      <TelegramCard familyId={me.family_id} />
+    </div>
+  );
+}
+
 function Roster({ me }: { me: Member }) {
   const t = useTranslations("family");
   const format = useFormatter();
@@ -104,7 +147,6 @@ function Roster({ me }: { me: Member }) {
     setLinks((l) => [...l, toLink(invite)]);
     reload();
   };
-  const adult = me.role === "adult";
   return (
     <section aria-labelledby="fam-h" className="flex flex-col gap-6 pt-2 sm:pt-6">
       <div>
@@ -142,26 +184,7 @@ function Roster({ me }: { me: Member }) {
             ))}
           </ul>
         )}
-        {adult && (
-          <div className="flex flex-col gap-6">
-            <div className={cardCls}>
-              {links.length > 0 && (
-                <>
-                  <h2 className="mb-4 font-display text-xl font-semibold">
-                    {t("invitesHeading")}
-                  </h2>
-                  <ul className="mb-6 flex flex-col gap-4 border-b border-line pb-6">
-                    {links.map((l) => (
-                      <InviteLink key={l.id} id={l.id} name={l.name} url={l.url} />
-                    ))}
-                  </ul>
-                </>
-              )}
-              <MemberForm familyId={me.family_id} onAdded={added} />
-            </div>
-            <TelegramCard familyId={me.family_id} />
-          </div>
-        )}
+        {me.role === "adult" && <AdultPanel me={me} links={links} onAdded={added} />}
       </div>
     </section>
   );

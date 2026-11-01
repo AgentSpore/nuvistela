@@ -1,5 +1,9 @@
 from datetime import UTC, datetime, timedelta
 
+from aiogram.exceptions import TelegramNetworkError
+from aiogram.methods import GetMe
+
+from tests.telegram.conftest import BOT
 from tests.test_agent_api import make_member
 
 CODE_URL = "/api/v1/families/{}/telegram/link-code"
@@ -43,3 +47,27 @@ async def test_other_family_id_is_404(tg) -> None:
 async def test_no_session_is_401(tg) -> None:
     _, family_id = await make_member(tg)
     assert (await tg.post(CODE_URL.format(family_id))).status_code == 401
+
+
+async def test_code_carries_the_bot_username(tg) -> None:
+    cookie, family_id = await make_member(tg)
+    resp = await tg.post(CODE_URL.format(family_id), headers=cookie)
+    assert resp.json()["bot_username"] == BOT.username
+
+
+async def test_code_without_telegram_has_no_bot_username(tg_off) -> None:
+    cookie, family_id = await make_member(tg_off)
+    resp = await tg_off.post(CODE_URL.format(family_id), headers=cookie)
+    assert resp.status_code == 200
+    assert resp.json()["bot_username"] is None
+
+
+async def test_getme_failure_still_issues_the_code(tg, sender) -> None:
+    async def broken():
+        raise TelegramNetworkError(method=GetMe(), message="down")
+
+    sender.me = broken
+    cookie, family_id = await make_member(tg)
+    resp = await tg.post(CODE_URL.format(family_id), headers=cookie)
+    assert resp.status_code == 200
+    assert resp.json()["bot_username"] is None

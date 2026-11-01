@@ -1,4 +1,4 @@
-import { renderHook, screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FamilyView } from "@/components/family-view";
@@ -151,13 +151,17 @@ describe("telegram card", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the command with the code and the 10 minute expiry", async () => {
+  it("shows the command with the code and the expiry", async () => {
     const expires = new Date(Date.now() + 600_000).toISOString();
-    m.issueTelegramCode.mockResolvedValue({ code: "AB12CD", expires_at: expires });
+    m.issueTelegramCode.mockResolvedValue({
+      code: "AB12CD",
+      expires_at: expires,
+      bot_username: "BumbliBot",
+    });
     renderRu(<TelegramCard familyId="f1" />);
     await userEvent.click(screen.getByRole("button", { name: "Получить код" }));
-    expect(await screen.findByText("/link@bot AB12CD")).toBeInTheDocument();
-    expect(screen.getByText(/Код действует 10 минут/)).toBeInTheDocument();
+    expect(await screen.findByText("/link@BumbliBot AB12CD")).toBeInTheDocument();
+    expect(screen.getByText(/Код действует до/)).toBeInTheDocument();
     expect(m.issueTelegramCode).toHaveBeenCalledWith("f1");
   });
 
@@ -166,14 +170,5 @@ describe("telegram card", () => {
     renderRu(<TelegramCard familyId="f1" />);
     await userEvent.click(screen.getByRole("button", { name: "Получить код" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("только взрослым");
-  });
-});
-
-describe("legacy member payload", () => {
-  it("defaults is_owner to false", async () => {
-    const { result } = renderHook(() =>
-      api.memberResponseSchema.parse({ ...mom, is_owner: undefined }),
-    );
-    await waitFor(() => expect(result.current.is_owner).toBe(false));
   });
 });

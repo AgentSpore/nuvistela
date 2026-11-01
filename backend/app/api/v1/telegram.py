@@ -3,6 +3,7 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
+from aiogram.exceptions import AiogramError
 from aiogram.types import Update
 from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import ValidationError
@@ -46,4 +47,18 @@ async def issue_link_code(
 ) -> LinkCodeResponse:
     async with request.app.state.engine.begin() as conn:
         code, expires = await TelegramLinkService(LinkRepository(conn)).issue_code(actor, family_id)
-    return LinkCodeResponse(code=code, expires_at=expires)
+    return LinkCodeResponse(
+        code=code, expires_at=expires, bot_username=await _bot_username(request)
+    )
+
+
+async def _bot_username(request: Request) -> str | None:
+    """The bot's @username for the `/link@bot` command; None when Telegram is off or unreachable."""
+    telegram = request.app.state.telegram
+    if telegram is None:
+        return None
+    try:
+        return (await telegram._sender.me()).username or None
+    except AiogramError:
+        logger.warning("telegram getMe failed: link code issued without the bot username")
+        return None

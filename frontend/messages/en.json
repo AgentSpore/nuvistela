@@ -170,9 +170,12 @@
       "step": "Add the bot to your family chat and send this command:",
       "copyCommand": "Copy command",
       "copiedCommand": "Command copied",
-      "expires": "The code works for 10 minutes, until {time}.",
+      "expires": "The code works until {time}.",
       "expired": "This code expired. Get a new one.",
-      "privateHint": "In a private chat with the bot, “/link code” is enough."
+      "privateHint": "In a private chat with the bot, “/link code” is enough.",
+      "copyFailed": "Could not copy, select the command by hand",
+      "addToGroup": "Add the bot to a group",
+      "notConnected": "Telegram is not connected to Bumbli yet, so there is no command. Try again later."
     }
   },
   "join": {

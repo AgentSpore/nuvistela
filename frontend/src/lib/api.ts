@@ -11,13 +11,16 @@ export const memberResponseSchema = z.object({
   age_band: z.enum(AGE_BANDS),
   role: z.enum(ROLES),
   interests: z.array(z.string()),
-  // Absent until the backend ships ownership.
-  is_owner: z.boolean().optional().default(false),
+  is_owner: z.boolean(),
 });
 const inviteSchema = z.object({ member: memberResponseSchema, invite_url: z.string() });
 const createdSchema = inviteSchema.extend({ family_id: z.string() });
 const reissueSchema = z.object({ invite_url: z.string() });
-const linkCodeSchema = z.object({ code: z.string(), expires_at: z.string() });
+const linkCodeSchema = z.object({
+  code: z.string(),
+  expires_at: z.string(),
+  bot_username: z.string().nullable(),
+});
 const replySchema = z.object({ reply: z.string() });
 
 export type Member = z.infer<typeof memberResponseSchema>;

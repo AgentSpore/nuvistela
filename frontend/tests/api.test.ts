@@ -17,6 +17,7 @@ const member = {
   age_band: "adult",
   role: "adult",
   interests: [],
+  is_owner: false,
 };
 const reply = (status: number, body?: unknown) =>
   vi
