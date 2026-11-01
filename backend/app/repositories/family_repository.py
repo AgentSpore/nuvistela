@@ -6,7 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from app.domain.family import AgeBand, Family, Member, NewMember, Role
 
-_MEMBER_COLS = "id, family_id, display_name, age_band, role, interests, created_at"
+_MEMBER_COLS = (
+    "id, family_id, display_name, age_band, role, interests, created_at,"
+    " EXISTS (SELECT 1 FROM families f WHERE f.owner_member_id = members.id) AS is_owner"
+)
 
 
 class FamilyRepository:
@@ -23,6 +26,7 @@ class FamilyRepository:
             role=Role(row.role),
             interests=tuple(row.interests),
             created_at=row.created_at,
+            is_owner=row.is_owner,
         )
 
     async def create_family(self, title: str, locale: str) -> Family:
@@ -61,6 +65,12 @@ class FamilyRepository:
             )
         ).one()
         return self._member(row)
+
+    async def set_owner(self, family_id: UUID, member_id: UUID) -> None:
+        await self._conn.execute(
+            text("UPDATE families SET owner_member_id = :member WHERE id = :id"),
+            {"member": member_id, "id": family_id},
+        )
 
     async def get_family(self, family_id: UUID) -> Family | None:
         row = (
@@ -121,7 +131,9 @@ class FamilyRepository:
             await self._conn.execute(
                 text(
                     "SELECT m.id, m.family_id, m.display_name, m.age_band, m.role, m.interests,"
-                    " m.created_at FROM sessions s JOIN members m ON m.id = s.member_id"
+                    " m.created_at,"
+                    " EXISTS (SELECT 1 FROM families f WHERE f.owner_member_id = m.id) AS is_owner"
+                    " FROM sessions s JOIN members m ON m.id = s.member_id"
                     " WHERE s.token_hash = :hash AND s.expires_at > now()"
                 ),
                 {"hash": token_hash},

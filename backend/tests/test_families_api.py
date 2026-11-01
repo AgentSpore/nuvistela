@@ -132,7 +132,7 @@ async def test_list_members_returns_own_family_without_secrets(
     assert len(members) == 3
     assert {m["id"] for m in members} >= {adult.id}
     assert all(
-        set(m) == {"id", "family_id", "display_name", "age_band", "role", "interests"}
+        set(m) == {"id", "family_id", "display_name", "age_band", "role", "interests", "is_owner"}
         for m in members
     )
 
@@ -328,7 +328,7 @@ async def test_concurrent_accepts_yield_one_session(
     assert after - before == 1
 
 
-async def test_adult_cannot_reissue_another_adults_invite(
+async def test_owner_reissue_for_another_adult_replaces_their_login(
     client: AsyncClient, new_family: Callable[[], Awaitable[Person]]
 ) -> None:
     papa = await new_family()
@@ -337,8 +337,8 @@ async def test_adult_cannot_reissue_another_adults_invite(
     )
     mama_id = added.json()["member"]["id"]
     resp = await client.post(f"/api/v1/members/{mama_id}/invite", headers=papa.cookie)
-    assert resp.status_code == 403
-    assert (await _accept(client, added.json()["invite_url"])).status_code == 200
+    assert resp.status_code == 200
+    assert (await _accept(client, resp.json()["invite_url"])).status_code == 200
 
 
 async def test_adult_can_reissue_a_childs_invite(

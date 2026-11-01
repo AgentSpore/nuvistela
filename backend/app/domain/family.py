@@ -34,6 +34,7 @@ class Member:
     role: Role
     interests: tuple[str, ...]
     created_at: datetime
+    is_owner: bool = False
 
 
 @dataclass(frozen=True)
