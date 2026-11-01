@@ -36,7 +36,7 @@ export function InviteLink({ id, name, url }: Props) {
           value={url}
           aria-label={t("linkFor", { name })}
           onFocus={(e) => e.currentTarget.select()}
-          className={`${inputCls} min-w-0 flex-1 truncate font-mono text-sm`}
+          className={`${inputCls} min-w-0 flex-1 truncate bg-sunken font-mono text-sm`}
         />
         <Button variant="ghost" onClick={copy} className="shrink-0 px-4">
           {copied ? <CheckIcon /> : <CopyIcon />}

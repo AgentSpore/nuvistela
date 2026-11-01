@@ -29,7 +29,6 @@ function Anonymous() {
     >
       <h1 className="font-display text-2xl font-semibold">{t("anonymousTitle")}</h1>
       <p className="mt-2 text-muted">{t("anonymous")}</p>
-      <p className="mt-1 text-sm text-muted">{t("anonymousHint")}</p>
       <Link href="/new" className={buttonClass("primary", "mt-6")}>
         {t("create")}
       </Link>

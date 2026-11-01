@@ -24,7 +24,14 @@
         "t": "Unlock chapters",
         "d": "Real chores like tidying up or a walk move the plot forward and grow your heroes' skills."
       }
-    ]
+    ],
+    "peek": {
+      "gm": "Night falls over Quiet Hills. Something rustles in the barn. Who looks inside first?",
+      "kid": "Me! I will just grab a flashlight first.",
+      "quest": "Quest of the day: help Grandma sort the pantry",
+      "kidName": "Mia",
+      "gmName": "Game master"
+    }
   },
   "locale": {
     "label": "Language",
@@ -46,8 +53,7 @@
     "create": "Create a family",
     "errorTitle": "Could not load",
     "retry": "Try again",
-    "anonymousTitle": "Sign in first",
-    "anonymousHint": "Open the invite link an adult in your family sent you."
+    "anonymousTitle": "Sign in first"
   },
   "errors": {
     "required": "Fill in this field",

@@ -18,13 +18,13 @@ export function AppNav() {
               <Link
                 href={`/${k}`}
                 aria-current={current ? "page" : undefined}
-                className={`relative inline-flex min-h-11 items-center rounded-lg px-2.5 text-[0.9rem] font-medium text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink aria-[current=page]:text-ink sm:px-3.5 sm:text-base ${focusRing}`}
+                className={`relative inline-flex min-h-11 items-center rounded-lg px-2 text-[0.875rem] whitespace-nowrap font-medium text-muted transition-colors duration-150 hover:bg-sunken hover:text-ink aria-[current=page]:text-ink sm:px-3.5 sm:text-base ${focusRing}`}
               >
                 {t(k)}
                 {current && (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-2.5 -bottom-0.5 h-0.5 rounded-full bg-honey-deep sm:inset-x-3.5"
+                    className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-honey-deep sm:inset-x-3.5"
                   />
                 )}
               </Link>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { inputCls } from "@/components/styles";
+import { ChevronIcon } from "@/components/ui/icons";
 
 type FieldProps = { id: string; label: string; error?: string; hint?: string };
 type TextProps = FieldProps & {
@@ -63,20 +64,23 @@ export function TextField({ value, onChange, maxLength, ...f }: TextProps) {
 export function SelectField({ value, onChange, options, ...f }: SelectProps) {
   return (
     <Wrap {...f}>
-      <select
-        id={f.id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={Boolean(f.error)}
-        aria-describedby={describedBy(f.id, f.error, f.hint)}
-        className={`${inputCls} cursor-pointer`}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          id={f.id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={Boolean(f.error)}
+          aria-describedby={describedBy(f.id, f.error, f.hint)}
+          className={`${inputCls} cursor-pointer appearance-none pr-11`}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronIcon />
+      </div>
     </Wrap>
   );
 }

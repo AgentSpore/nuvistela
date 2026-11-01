@@ -15,7 +15,8 @@ export function assertServableHostname(hostname: string | undefined): void {
   if (!hostname) return;
   let normalized: string;
   try {
-    const host = hostname.includes(":") && !hostname.startsWith("[") ? `[${hostname}]` : hostname;
+    const host =
+      hostname.includes(":") && !hostname.startsWith("[") ? `[${hostname}]` : hostname;
     normalized = new URL(`http://${host}`).hostname;
   } catch {
     return;

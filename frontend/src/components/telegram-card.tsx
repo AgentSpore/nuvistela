@@ -37,7 +37,7 @@ function CodeView({ code, expiresAt }: { code: string; expiresAt: Date }) {
   return (
     <div className="rise flex flex-col gap-3">
       <p className="text-muted">{t("step")}</p>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2">
         <code className="min-w-0 flex-1 break-all rounded-xl border border-line-strong bg-sunken px-3.5 py-3 font-mono text-base">
           {command}
         </code>

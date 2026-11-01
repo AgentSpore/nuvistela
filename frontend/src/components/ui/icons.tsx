@@ -82,3 +82,11 @@ export const BeeMark = () => (
     />
   </svg>
 );
+export const ChevronIcon = () => (
+  <svg
+    {...base}
+    className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-muted"
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
