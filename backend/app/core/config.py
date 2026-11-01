@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     db_max_overflow: int = Field(default=10, ge=0)
     cookie_secure: bool = True
     family_llm_model: str | None = None
+    world_model: str | None = None
+    world_worker_enabled: bool = True
+    world_max_attempts: int = Field(default=3, ge=1)
+    world_retry_delay_s: float = Field(default=30.0, ge=0)
+    world_poll_s: float = Field(default=2.0, gt=0)
+    world_tokens_limit: int = 20_000
     openrouter_api_key: SecretStr | None = None
     agent_request_limit: int = 10
     agent_total_tokens_limit: int = 30_000

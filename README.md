@@ -28,6 +28,10 @@ uv run pytest -q
 Tests start Postgres through Testcontainers and need a running Docker. On colima set
 `TESTCONTAINERS_RYUK_DISABLED=true`.
 
+## World
+
+`POST /api/v1/families/{id}/world` (adults) queues the family world, `POST .../world/regenerate` repeats it with the stored genre (3 requests per family per day), `GET .../world` returns `pending`, `ready` or `fallback` with the world. A background worker generates it with `WORLD_MODEL` over OpenRouter with zero data retention. Without `WORLD_MODEL` (or the API key) the worker is off and every world stays `pending`; after 3 failed attempts a template world for the genre is stored (`fallback`).
+
 ## Telegram
 
 Set in `.env` (names only here): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` (1-256 characters of `A-Za-z0-9_-`), `TELEGRAM_WEBHOOK_URL` (public `https://.../api/v1/telegram/webhook`), optional `TELEGRAM_MAX_CONCURRENT_UPDATES` (default 8). Without the token and the secret the webhook answers 404 and the rest of the app runs normally; an invalid token is logged by class and Telegram stays off.

@@ -12,3 +12,7 @@ class Forbidden(DomainError):
 
 class NotFound(DomainError):
     pass
+
+
+class RateLimited(DomainError):
+    pass

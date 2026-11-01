@@ -18,6 +18,12 @@ class FamilyStateReader(Protocol):
     async def get_state(self, family_id: str) -> FamilyStateView: ...
 
 
+class WorldSummaryReader(Protocol):
+    """Short text about the family's ready world, or None."""
+
+    async def summary(self, family_id: str) -> str | None: ...
+
+
 @dataclass(frozen=True, slots=True)
 class GameDeps:
     """Per-turn dependencies: the family the event belongs to plus service handles."""
@@ -26,3 +32,4 @@ class GameDeps:
     families: FamilyStateReader
     channel: str = "web"
     kind: str = "message"
+    worlds: WorldSummaryReader | None = None
