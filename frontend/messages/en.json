@@ -152,7 +152,7 @@
   "family": {
     "title": "Family",
     "reissue": "New link",
-    "reissued": "The previous link no longer works.",
+    "reissued": "The previous link no longer works and signs this member out everywhere. Send them the new one.",
     "reissueFor": "New link for {name}",
     "subtitle": "{count, plural, one {# member} other {# members}}",
     "owner": "Owner",
