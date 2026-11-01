@@ -10,7 +10,7 @@ from aiogram.utils.token import TokenValidationError
 from fastapi import FastAPI
 from pydantic_ai import Agent
 from pydantic_ai_harness.spend import PostgresSpendStore
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from app.agent.deps import GameDeps
 from app.agent.errors import AgentConfigError
@@ -50,6 +50,33 @@ def _build_world_generator(settings: Settings) -> WorldGenerator | None:
     except AgentConfigError:
         logger.warning("WORLD_MODEL is not configured: world jobs are not processed")
         return None
+
+
+def _create_engines(settings: Settings) -> tuple[AsyncEngine, AsyncEngine]:
+    """The request engine and a one-connection engine reserved for /health."""
+    connect_args = {"timeout": 3}
+    engine = create_async_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        connect_args=connect_args,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_max_overflow,
+    )
+    # Own pool for /health: turns holding every pooled connection must not fail liveness.
+    health_engine = create_async_engine(
+        settings.database_url, connect_args=connect_args, pool_size=1, max_overflow=0
+    )
+    return engine, health_engine
+
+
+def _start_world_worker(
+    engine: AsyncEngine, settings: Settings, generator: WorldGenerator | None
+) -> asyncio.Task[None] | None:
+    """Run the world queue worker unless disabled or the world model is not configured."""
+    generator = generator or _build_world_generator(settings)
+    if generator is None or not settings.world_worker_enabled:
+        return None
+    return asyncio.create_task(WorldWorker(engine, generator, settings).run_forever())
 
 
 class TelegramRuntime:
@@ -109,21 +136,7 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        connect_args = {"timeout": 3}
-        engine = create_async_engine(
-            settings.database_url,
-            pool_pre_ping=True,
-            connect_args=connect_args,
-            pool_size=settings.db_pool_size,
-            max_overflow=settings.db_max_overflow,
-        )
-        # Own pool for /health: turns holding every pooled connection must not fail liveness.
-        health_engine = create_async_engine(
-            settings.database_url,
-            connect_args=connect_args,
-            pool_size=1,
-            max_overflow=0,
-        )
+        engine, health_engine = _create_engines(settings)
         app.state.engine = engine
         app.state.health_engine = health_engine
         pool = None
@@ -139,11 +152,7 @@ def create_app(
         try:
             app.state.agent = agent or _build_or_degrade(settings, app.state.spend_store)
             app.state.telegram = _build_telegram(app, settings, telegram_sender)
-            generator = world_generator or _build_world_generator(settings)
-            if generator and settings.world_worker_enabled:
-                worker_task = asyncio.create_task(
-                    WorldWorker(engine, generator, settings).run_forever()
-                )
+            worker_task = _start_world_worker(engine, settings, world_generator)
             yield
         finally:
             if worker_task is not None:
