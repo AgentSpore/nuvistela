@@ -5,7 +5,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   setRequestLocale(locale);
   return (
-    <main id="main" className="mx-auto w-full max-w-2xl px-4 pb-8 sm:px-6">
+    <main id="main" className="mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6">
       <FamilyView />
     </main>
   );

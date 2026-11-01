@@ -31,7 +31,7 @@ describe("api client", () => {
   it("sends cookies and parses /me", async () => {
     const fetchMock = reply(200, member);
     vi.stubGlobal("fetch", fetchMock);
-    expect(await getMe()).toEqual(member);
+    expect(await getMe()).toEqual({ ...member, is_owner: false });
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ credentials: "include" });
   });
 
@@ -84,7 +84,7 @@ describe("api client", () => {
   it("lists family members", async () => {
     const fetchMock = reply(200, [member]);
     vi.stubGlobal("fetch", fetchMock);
-    expect(await listMembers("f1")).toEqual([member]);
+    expect(await listMembers("f1")).toEqual([{ ...member, is_owner: false }]);
     expect(fetchMock.mock.calls[0]?.[0]).toMatch(/\/families\/f1\/members$/);
   });
 

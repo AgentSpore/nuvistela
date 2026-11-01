@@ -2,10 +2,11 @@
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { addMember, AGE_BANDS, ROLES, type Invite } from "@/lib/api";
+import { errorKey } from "@/lib/errors";
 import { check, memberInputSchema, parseInterests, type FieldErrors } from "@/lib/forms";
-import { errorKey } from "@/lib/use-me";
 import { showErrors, SelectField, TextField } from "@/components/fields";
-import { btnCls } from "@/components/styles";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 type Props = { familyId: string; onAdded: (invite: Invite) => void };
 
@@ -15,11 +16,12 @@ const FIELD_IDS = {
   role: "m-role",
   interests: "m-interests",
 };
+const EMPTY = { name: "", band: "6-9", role: "child", interests: "" };
 
 export function MemberForm({ familyId, onAdded }: Props) {
   const t = useTranslations("member");
   const te = useTranslations("errors");
-  const [v, setV] = useState({ name: "", band: "6-9", role: "child", interests: "" });
+  const [v, setV] = useState(EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -45,7 +47,7 @@ export function MemberForm({ familyId, onAdded }: Props) {
     try {
       const invite = await addMember(familyId, r.data);
       onAdded(invite);
-      setV({ name: "", band: "6-9", role: "child", interests: "" });
+      setV(EMPTY);
     } catch (err) {
       setFailure(te(errorKey(err)));
     }
@@ -55,7 +57,7 @@ export function MemberForm({ familyId, onAdded }: Props) {
   const err = (k: string) => (errors[k] ? te(errors[k]) : undefined);
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">{t("heading")}</h2>
+      <h2 className="font-display text-xl font-semibold">{t("heading")}</h2>
       <TextField
         id="m-name"
         label={t("name")}
@@ -64,22 +66,24 @@ export function MemberForm({ familyId, onAdded }: Props) {
         maxLength={40}
         error={err("display_name")}
       />
-      <SelectField
-        id="m-band"
-        label={t("band")}
-        value={v.band}
-        onChange={set("band")}
-        error={err("age_band")}
-        options={AGE_BANDS.map((b) => ({ value: b, label: t(`bands.${b}`) }))}
-      />
-      <SelectField
-        id="m-role"
-        label={t("role")}
-        value={v.role}
-        onChange={set("role")}
-        error={err("role")}
-        options={ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))}
-      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField
+          id="m-band"
+          label={t("band")}
+          value={v.band}
+          onChange={set("band")}
+          error={err("age_band")}
+          options={AGE_BANDS.map((b) => ({ value: b, label: t(`bands.${b}`) }))}
+        />
+        <SelectField
+          id="m-role"
+          label={t("role")}
+          value={v.role}
+          onChange={set("role")}
+          error={err("role")}
+          options={ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))}
+        />
+      </div>
       <TextField
         id="m-interests"
         label={t("interests")}
@@ -88,14 +92,10 @@ export function MemberForm({ familyId, onAdded }: Props) {
         onChange={set("interests")}
         error={err("interests")}
       />
-      {failure && (
-        <p role="alert" className="font-medium text-danger">
-          {failure}
-        </p>
-      )}
-      <button type="submit" disabled={busy} className={btnCls}>
+      {failure && <Alert>{failure}</Alert>}
+      <Button type="submit" disabled={busy} aria-busy={busy}>
         {t("submit")}
-      </button>
+      </Button>
     </form>
   );
 }
