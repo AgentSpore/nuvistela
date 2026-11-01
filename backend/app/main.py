@@ -19,6 +19,7 @@ from app.api.health import router as health_router
 from app.api.v1.agent import router as agent_router
 from app.api.v1.families import router as families_router
 from app.api.v1.telegram import router as telegram_router
+from app.api.v1.world import router as world_router
 from app.channels.telegram.handler import TelegramHandler
 from app.channels.telegram.runner import UpdateRunner
 from app.channels.telegram.secret import is_valid_webhook_secret
@@ -138,5 +139,6 @@ def create_app(
     app.include_router(families_router)
     app.include_router(agent_router)
     app.include_router(telegram_router)
+    app.include_router(world_router)
     register_error_handlers(app)
     return app

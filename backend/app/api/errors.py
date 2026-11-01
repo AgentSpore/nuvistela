@@ -2,9 +2,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.agent.errors import AgentBudgetExceededError, AgentBusyError, AgentUnavailableError
-from app.domain.errors import Forbidden, NotFound, Unauthorized
+from app.domain.errors import Forbidden, NotFound, RateLimited, Unauthorized
 
-_STATUS: dict[type[Exception], int] = {Unauthorized: 401, Forbidden: 403, NotFound: 404}
+_STATUS: dict[type[Exception], int] = {
+    Unauthorized: 401,
+    Forbidden: 403,
+    NotFound: 404,
+    RateLimited: 429,
+}
 # Agent failures carry provider text; the client gets a fixed message instead.
 _AGENT: dict[type[Exception], tuple[int, str]] = {
     AgentBudgetExceededError: (429, "the game master has reached today's limit"),

@@ -7,9 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from app.domain.errors import Unauthorized
 from app.domain.family import Member
 from app.repositories.family_repository import FamilyRepository
+from app.repositories.job_repository import JobRepository
+from app.repositories.world_repository import WorldRepository
 from app.services.agent_gateway import AgentGateway
 from app.services.family_service import FamilyService
 from app.services.gateway_factory import build_agent_gateway
+from app.services.world_service import WorldService
 
 SESSION_COOKIE = "bumbli_session"
 
@@ -29,6 +32,15 @@ def get_family_service(
 
 
 FamilyServiceDep = Annotated[FamilyService, Depends(get_family_service)]
+
+
+def get_world_service(
+    conn: Annotated[AsyncConnection, Depends(get_conn, scope="function")],
+) -> WorldService:
+    return WorldService(FamilyRepository(conn), WorldRepository(conn), JobRepository(conn))
+
+
+WorldServiceDep = Annotated[WorldService, Depends(get_world_service)]
 
 
 async def current_member(
