@@ -22,7 +22,7 @@ from pydantic_ai.messages import (  # ty: ignore[unresolved-import] backend-venv
     TextPart,
     UserPromptPart,
 )
-from pydantic_ai.models.function import AgentInfo, FunctionModel
+from pydantic_ai.models.function import AgentInfo, FunctionModel  # ty: ignore[unresolved-import] backend-venv-only package, absent from the e2e venv
 
 from replies import scripted_reply
 
