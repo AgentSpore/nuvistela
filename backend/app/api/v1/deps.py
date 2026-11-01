@@ -20,6 +20,9 @@ async def get_conn(request: Request) -> AsyncIterator[AsyncConnection]:
     """One transaction per request: commit on success, roll back on error."""
     async with request.app.state.engine.begin() as conn:
         yield conn
+    # Reached only after a successful commit: a rolled-back activity write is retried next time.
+    if member_id := getattr(request.state, "activity_member_id", None):
+        FunnelService.mark_checked(member_id)
 
 
 # scope="function": commit runs before the response is sent, so a client holding
@@ -45,13 +48,15 @@ FamilyServiceDep = Annotated[FamilyService, Depends(get_family_service)]
 
 async def current_member(
     service: FamilyServiceDep,
+    funnel: FunnelServiceDep,
     request: Request,
     session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> Member:
     if not session:
         raise Unauthorized("not authenticated")
     member = await service.authenticate(session)
-    await FunnelService.track_activity(request.app.state.engine, member)
+    await funnel.note_activity(member)
+    request.state.activity_member_id = member.id
     return member
 
 
