@@ -1,38 +1,44 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { useState, type FormEvent } from "react";
-import { isAgentMissing, sendAgentMessage } from "@/lib/api";
+import { useEffect, useRef, useState } from "react";
+import { sendAgentMessage, type Member } from "@/lib/api";
+import { agentNoteKey, type AgentNote } from "@/lib/errors";
 import { useMe, useMembers } from "@/lib/use-me";
+import { ChatMessage, type Message } from "@/components/chat-message";
+import { Composer } from "@/components/composer";
 import { Gate } from "@/components/gate";
-import { btnCls, inputCls } from "@/components/styles";
-
-type Note = "soon" | "failed" | null;
-type Message = { id: string; from: "me" | "agent"; text: string };
+import { Alert, type Tone } from "@/components/ui/alert";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { BeeMark } from "@/components/ui/icons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 let nextId = 0;
 
-const BUBBLE = {
-  me: "max-w-[85%] self-end rounded-2xl bg-accent px-3 py-2 text-white",
-  agent: "max-w-[85%] self-start rounded-2xl bg-honey/30 px-3 py-2",
-};
-
-function Members({ familyId }: { familyId: string }) {
+function MembersStrip({ familyId }: { familyId: string }) {
   const t = useTranslations("play");
-  const te = useTranslations("errors");
-  const { members, failed } = useMembers(familyId);
+  const tf = useTranslations("family");
+  const { members, failed, loaded, reload } = useMembers(familyId);
   if (failed)
     return (
-      <p role="alert" className="text-sm font-medium text-danger">
-        {te("generic")}
-      </p>
+      <Alert
+        title={tf("loadFailed")}
+        action={
+          <Button variant="ghost" onClick={reload}>
+            {tf("retry")}
+          </Button>
+        }
+      />
     );
+  if (!loaded) return <Skeleton className="h-9 w-64 max-w-full !rounded-full" />;
   return (
     <ul aria-label={t("members")} className="flex flex-wrap gap-2">
       {members.map((x) => (
         <li
           key={x.id}
-          className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent"
+          className="inline-flex items-center gap-2 rounded-full border border-line bg-card py-1 pr-3.5 pl-1 text-sm font-medium"
         >
+          <Avatar id={x.id} name={x.display_name} size="sm" />
           {x.display_name}
         </li>
       ))}
@@ -40,80 +46,157 @@ function Members({ familyId }: { familyId: string }) {
   );
 }
 
-export function Play() {
+function EmptyChat() {
   const t = useTranslations("play");
-  const me = useMe();
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+      <span className="inline-flex size-16 items-center justify-center rounded-full bg-honey-soft [&_svg]:size-9">
+        <BeeMark />
+      </span>
+      <p className="font-display text-xl font-semibold">{t("empty")}</p>
+      <p className="max-w-[34ch] text-muted">{t("emptyHint")}</p>
+    </div>
+  );
+}
+
+function Typing() {
+  const t = useTranslations("play");
+  return (
+    <div role="status" className="rise flex items-center gap-2.5 px-1 text-sm text-muted">
+      <span className="inline-flex size-8 items-center justify-center rounded-full bg-honey-soft">
+        <BeeMark />
+      </span>
+      <span className="inline-flex items-center gap-1" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            style={{ animation: `dot 1.2s ${i * 0.15}s infinite` }}
+            className="size-1.5 rounded-full bg-muted"
+          />
+        ))}
+      </span>
+      <span>{t("typing")}</span>
+    </div>
+  );
+}
+
+const NOTE_TONE: Partial<Record<AgentNote, Tone>> = {
+  soon: "info",
+  busy: "info",
+  limit: "info",
+  unavailable: "info",
+};
+
+const NEAR_BOTTOM_PX = 80;
+
+/** Keeps the log pinned to the newest line unless the reader scrolled up to reread. */
+function useStickyScroll(key: string) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const stuck = useRef(true);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el && stuck.current) el.scrollTop = el.scrollHeight;
+  }, [key]);
+  const onScroll = () => {
+    const el = scroller.current;
+    if (el)
+      stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+  };
+  return { scroller, onScroll, stick: () => (stuck.current = true) };
+}
+
+type LogProps = {
+  me: Member;
+  messages: Message[];
+  busy: boolean;
+  note: AgentNote | null;
+};
+
+function ChatLog({ me, messages, busy, note }: LogProps) {
+  const t = useTranslations("play");
+  return (
+    <>
+      {messages.length === 0 && !busy && <EmptyChat />}
+      <div role="log" aria-live="polite">
+        <ol className="flex flex-col gap-3.5">
+          {messages.map((x) => (
+            <ChatMessage
+              key={x.id}
+              message={x}
+              senderId={me.id}
+              senderName={x.from === "me" ? me.display_name : t("agent")}
+            />
+          ))}
+        </ol>
+      </div>
+      {busy && <Typing />}
+      {note && (
+        <Alert tone={NOTE_TONE[note] ?? "danger"} title={t(`noteTitle.${note}`)}>
+          {`${t(`note.${note}`)} ${t("restored")}`}
+        </Alert>
+      )}
+    </>
+  );
+}
+
+const append = (m: Message) => (l: Message[]) => [...l, m];
+
+function Chat({ me }: { me: Member }) {
+  const t = useTranslations("play");
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
-  const [note, setNote] = useState<Note>(null);
+  const [note, setNote] = useState<AgentNote | null>(null);
   const [busy, setBusy] = useState(false);
-  const push = (from: Message["from"], text: string) =>
-    setMessages((l) => [...l, { id: `m${nextId++}`, from, text }]);
+  const { scroller, onScroll, stick } = useStickyScroll(
+    `${messages.length}|${busy}|${note}`,
+  );
 
-  async function send(e: FormEvent) {
-    e.preventDefault();
+  async function send() {
     const text = draft.trim();
-    if (!text) return;
-    push("me", text);
+    const mine: Message = { id: `m${nextId++}`, from: "me", text };
+    stick();
+    setMessages(append(mine));
     setDraft("");
+    setNote(null);
     setBusy(true);
     try {
-      push("agent", (await sendAgentMessage(text)).reply);
-      setNote(null);
+      const { reply } = await sendAgentMessage(text);
+      setMessages(append({ id: `m${nextId++}`, from: "agent", text: reply }));
     } catch (err) {
-      setNote(isAgentMissing(err) ? "soon" : "failed");
+      setMessages((l) => l.filter((x) => x.id !== mine.id));
+      setDraft((d) => (d ? `${text}\n${d}` : text));
+      setNote(agentNoteKey(err));
     }
     setBusy(false);
   }
 
   return (
+    <section
+      aria-label={t("chat")}
+      className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-line bg-card shadow-soft"
+    >
+      <div
+        ref={scroller}
+        onScroll={onScroll}
+        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-5"
+      >
+        <ChatLog me={me} messages={messages} busy={busy} note={note} />
+      </div>
+      <Composer value={draft} onChange={setDraft} onSend={send} busy={busy} />
+    </section>
+  );
+}
+
+export function Play() {
+  const t = useTranslations("play");
+  const me = useMe();
+  return (
     <Gate state={me}>
       {(m) => (
-        <div className="flex min-h-[calc(100dvh-4rem)] flex-col gap-3">
-          <header>
-            <h1 className="sr-only">{t("title")}</h1>
-            <Members familyId={m.family_id} />
-          </header>
-          <section
-            aria-label={t("chat")}
-            className="flex flex-1 flex-col gap-3 rounded-2xl border border-line bg-card p-3"
-          >
-            <ol
-              role="log"
-              aria-live="polite"
-              className="flex flex-1 flex-col gap-2 overflow-y-auto"
-            >
-              {messages.length === 0 && <li className="text-muted">{t("empty")}</li>}
-              {messages.map((x) => (
-                <li key={x.id} className={BUBBLE[x.from]}>
-                  <span className="sr-only">
-                    {t(x.from === "me" ? "you" : "agent")}:{" "}
-                  </span>
-                  {x.text}
-                </li>
-              ))}
-            </ol>
-            {note && (
-              <p
-                role="status"
-                className="rounded-lg bg-honey/30 px-3 py-2 text-sm font-medium"
-              >
-                {t(`note.${note}`)}
-              </p>
-            )}
-            <form onSubmit={send} className="flex gap-2">
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                aria-label={t("input")}
-                placeholder={t("placeholder")}
-                className={`${inputCls} min-w-0 flex-1`}
-              />
-              <button type="submit" disabled={busy} className={btnCls}>
-                {t("send")}
-              </button>
-            </form>
-          </section>
+        <div className="flex h-[calc(100dvh-4.75rem)] flex-col gap-3 sm:h-[calc(100dvh-5.5rem)]">
+          <h1 className="sr-only">{t("title")}</h1>
+          <MembersStrip familyId={m.family_id} />
+          <Chat me={m} />
         </div>
       )}
     </Gate>

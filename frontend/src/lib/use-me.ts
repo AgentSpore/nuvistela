@@ -24,24 +24,16 @@ export function useMe(): MeState {
   return state;
 }
 
-export function errorKey(
-  e: unknown,
-): "network" | "unauthorized" | "forbidden" | "generic" {
-  if (!(e instanceof ApiError)) return "generic";
-  if (e.kind === "network") return "network";
-  if (e.status === 401) return "unauthorized";
-  if (e.status === 403) return "forbidden";
-  return "generic";
-}
-
 /** Family roster from the API; `reload` refetches after a member is added. */
 export function useMembers(familyId: string): {
   members: Member[];
   failed: boolean;
+  loaded: boolean;
   reload: () => void;
 } {
   const [members, setMembers] = useState<Member[]>([]);
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [tick, setTick] = useState(0);
   useEffect(() => {
     let ignore = false;
@@ -49,6 +41,7 @@ export function useMembers(familyId: string): {
       (list) => {
         if (ignore) return;
         setMembers(list);
+        setLoaded(true);
         setFailed(false);
       },
       () => !ignore && setFailed(true),
@@ -58,5 +51,5 @@ export function useMembers(familyId: string): {
     };
   }, [familyId, tick]);
   const reload = useCallback(() => setTick((n) => n + 1), []);
-  return { members, failed, reload };
+  return { members, failed, loaded, reload };
 }

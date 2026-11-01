@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { inputCls } from "@/components/styles";
+import { ChevronIcon } from "@/components/ui/icons";
 
 type FieldProps = { id: string; label: string; error?: string; hint?: string };
 type TextProps = FieldProps & {
@@ -25,8 +26,8 @@ function Wrap({
   children,
 }: FieldProps & { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="font-medium">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[0.95rem] font-semibold">
         {label}
       </label>
       {children}
@@ -36,7 +37,7 @@ function Wrap({
         </p>
       )}
       {error && (
-        <p id={`${id}-err`} className="text-sm font-medium text-danger">
+        <p id={`${id}-err`} className="rise text-sm font-semibold text-danger">
           {error}
         </p>
       )}
@@ -63,20 +64,23 @@ export function TextField({ value, onChange, maxLength, ...f }: TextProps) {
 export function SelectField({ value, onChange, options, ...f }: SelectProps) {
   return (
     <Wrap {...f}>
-      <select
-        id={f.id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={Boolean(f.error)}
-        aria-describedby={describedBy(f.id, f.error, f.hint)}
-        className={inputCls}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          id={f.id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={Boolean(f.error)}
+          aria-describedby={describedBy(f.id, f.error, f.hint)}
+          className={`${inputCls} cursor-pointer appearance-none pr-11`}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronIcon />
+      </div>
     </Wrap>
   );
 }

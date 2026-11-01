@@ -1,25 +1,24 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { absoluteInvite, type Invite } from "@/lib/api";
-import { btnGhostCls, inputCls } from "@/components/styles";
+import { CopyButton, CopyStatusText, useCopy } from "@/components/copy";
+import { Avatar } from "@/components/ui/avatar";
+import { inputCls } from "@/components/styles";
 
-export function InviteLink({ name, url }: { name: string; url: string }) {
+type Props = { id?: string; name: string; url: string };
+
+export function InviteLink({ id, name, url }: Props) {
   const t = useTranslations("invite");
-  const [copied, setCopied] = useState<boolean | null>(null);
   const input = useRef<HTMLInputElement>(null);
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-      input.current?.select();
-    }
-  }
+  const { status, copy } = useCopy(url, () => input.current?.select());
+  const labels = { copy: t("copy"), copied: t("copied"), failed: t("copyFailed") };
   return (
-    <li className="flex flex-col gap-2">
-      <span className="font-medium">{name}</span>
+    <li className="rise flex flex-col gap-2">
+      <span className="flex items-center gap-2.5 font-semibold">
+        <Avatar id={id ?? name} name={name} size="sm" />
+        {name}
+      </span>
       <div className="flex gap-2">
         <input
           ref={input}
@@ -27,18 +26,16 @@ export function InviteLink({ name, url }: { name: string; url: string }) {
           value={url}
           aria-label={t("linkFor", { name })}
           onFocus={(e) => e.currentTarget.select()}
-          className={`${inputCls} min-w-0 flex-1 text-sm`}
+          className={`${inputCls} min-w-0 flex-1 truncate bg-sunken font-mono text-sm`}
         />
-        <button type="button" onClick={copy} className={btnGhostCls}>
-          {copied ? t("copied") : t("copy")}
-        </button>
+        <CopyButton
+          status={status}
+          onCopy={copy}
+          labels={labels}
+          className="shrink-0 px-4"
+        />
       </div>
-      <span
-        role="status"
-        className={copied === false ? "text-sm font-medium text-danger" : "sr-only"}
-      >
-        {copied === null ? "" : copied ? t("copied") : t("copyFailed")}
-      </span>
+      <CopyStatusText status={status} labels={labels} />
     </li>
   );
 }

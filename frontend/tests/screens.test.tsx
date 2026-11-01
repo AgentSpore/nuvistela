@@ -52,12 +52,13 @@ describe("/play", () => {
 });
 
 describe("/family", () => {
-  it("offers reissue for others but not for self", async () => {
+  it("offers a non-owner adult reissue for a child and for self", async () => {
     renderRu(<FamilyView />);
     await screen.findByText("Маша", { selector: "p" });
-    const buttons = screen.getAllByRole("button", { name: /Новая ссылка/ });
-    expect(buttons).toHaveLength(1);
-    expect(buttons[0]).toHaveAccessibleName("Новая ссылка: Маша");
+    const names = screen
+      .getAllByRole("button", { name: /Новая ссылка/ })
+      .map((b) => b.getAttribute("aria-label"));
+    expect(names).toEqual(["Новая ссылка: Анна", "Новая ссылка: Маша"]);
   });
 
   it("hosts the add-member form for adults", async () => {
@@ -116,17 +117,6 @@ describe("invite link", () => {
 });
 
 describe("reissue rules", () => {
-  it("shows reissue only on child rows", async () => {
-    m.listMembers.mockResolvedValue([
-      member(),
-      member({ id: "m3", display_name: "Олег" }),
-      member({ id: "m2", display_name: "Маша", age_band: "6-9", role: "child" }),
-    ]);
-    renderRu(<FamilyView />);
-    await screen.findByText("Маша", { selector: "p" });
-    expect(screen.getAllByRole("button", { name: /Новая ссылка/ })).toHaveLength(1);
-  });
-
   it("maps 403 to the forbidden message", async () => {
     m.reissueInvite.mockRejectedValue(new api.ApiError("http", 403));
     renderRu(<FamilyView />);

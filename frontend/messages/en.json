@@ -5,7 +5,33 @@
   },
   "landing": {
     "title": "Bumbli",
-    "pitch": "A family game where real chores unlock chapters of your shared story."
+    "pitch": "A family game where real chores unlock chapters of your shared story.",
+    "eyebrow": "A game for the whole family",
+    "cta": "Create a family",
+    "ctaPlay": "Continue playing",
+    "trust": "No passwords, no email: everyone signs in with a personal link.",
+    "stepsLabel": "How it works",
+    "steps": [
+      {
+        "t": "Gather your family",
+        "d": "Name the family and add everyone, from toddlers to grandparents. Each person gets a personal link."
+      },
+      {
+        "t": "Talk to the game master",
+        "d": "The game master runs your shared story and sets quests that suit each person's age."
+      },
+      {
+        "t": "Unlock chapters",
+        "d": "Real chores like tidying up or a walk move the plot forward and grow your heroes' skills."
+      }
+    ],
+    "peek": {
+      "gm": "Night falls over Quiet Hills. Something rustles in the barn. Who looks inside first?",
+      "kid": "Me! I will just grab a flashlight first.",
+      "quest": "Quest of the day: help Grandma sort the pantry",
+      "kidName": "Mia",
+      "gmName": "Game master"
+    }
   },
   "locale": {
     "label": "Language",
@@ -16,13 +42,18 @@
     "label": "Sections",
     "new": "New family",
     "play": "Play",
-    "family": "Family"
+    "family": "Family",
+    "home": "Bumbli, home",
+    "skip": "Skip to content"
   },
   "gate": {
     "loading": "Loading…",
     "error": "Could not load data. Try refreshing the page.",
     "anonymous": "You are not signed in yet. Open your invite link or create a family.",
-    "create": "Create a family"
+    "create": "Create a family",
+    "errorTitle": "Could not load",
+    "retry": "Try again",
+    "anonymousTitle": "Sign in first"
   },
   "errors": {
     "required": "Fill in this field",
@@ -39,7 +70,8 @@
     "linkFor": "Sign-in link for {name}",
     "copy": "Copy",
     "copied": "Copied",
-    "copyFailed": "Could not copy, select the link manually"
+    "copyFailed": "Could not copy, select the link manually",
+    "expiresNote": "The link works once."
   },
   "member": {
     "heading": "Add a member",
@@ -69,7 +101,14 @@
     "interestsHint": "Comma-separated, up to 10",
     "submit": "Create family",
     "linksHeading": "Sign-in links",
-    "linksHint": "Send everyone their own link. Opening it signs them into the game. Each link is personal, do not share it."
+    "linksHint": "Send everyone their own link. Opening it signs them into the game. Each link is personal, do not share it.",
+    "intro": "A family name, your name and a couple of interests: the game master will build a story around you.",
+    "step1": "Family",
+    "step2": "Links",
+    "stepsLabel": "Steps",
+    "createdHeading": "Family created",
+    "play": "Go to the game",
+    "addMore": "Add everyone else while they are around. You can also do it later on the Family page."
   },
   "play": {
     "title": "Play",
@@ -81,21 +120,70 @@
     "send": "Send",
     "note": {
       "soon": "The game master is coming soon. Nobody has read your message yet.",
-      "failed": "Could not send the message. Please try again."
+      "failed": "Could not send the message. Please try again.",
+      "busy": "The game master is still replying. Give them a moment, then keep writing.",
+      "limit": "Your family has used today's limit. Come back tomorrow, the game master will be waiting.",
+      "unavailable": "The game master is unavailable right now, and it is not your fault. Try again in a few minutes.",
+      "textTooLong": "The message is too long. Please shorten it.",
+      "network": "Cannot reach the server. Check your connection and try again.",
+      "unauthorized": "Sign in with your invite link first.",
+      "forbidden": "You cannot do this."
     },
     "you": "You",
-    "agent": "Game master"
+    "agent": "Game master",
+    "emptyHint": "For example: “Hello! We are ready to start”.",
+    "typing": "The game master is typing…",
+    "hint": "Enter sends, Shift+Enter adds a new line.",
+    "counter": "{count} of {max}",
+    "counterLabel": "Characters: {count} of {max}",
+    "noteTitle": {
+      "soon": "The game master is coming soon",
+      "busy": "One moment",
+      "limit": "That's it for today",
+      "unavailable": "Game master unavailable",
+      "failed": "Message not sent",
+      "textTooLong": "Message too long",
+      "network": "No connection",
+      "unauthorized": "Sign-in needed",
+      "forbidden": "Not allowed"
+    },
+    "restored": "Your text is back in the box."
   },
   "family": {
     "title": "Family",
     "reissue": "New link",
     "reissued": "The previous link no longer works.",
-    "reissueFor": "New link for {name}"
+    "reissueFor": "New link for {name}",
+    "subtitle": "{count, plural, one {# member} other {# members}}",
+    "owner": "Owner",
+    "you": "You",
+    "empty": "Nobody here yet.",
+    "loadFailed": "Could not load the family list.",
+    "retry": "Try again",
+    "invitesHeading": "New links",
+    "telegram": {
+      "heading": "Connect Telegram",
+      "intro": "Link your family chat and the game master will answer there too.",
+      "get": "Get a code",
+      "again": "Get a new code",
+      "codeLabel": "Code",
+      "step": "Add the bot to your family chat and send this command:",
+      "copyCommand": "Copy command",
+      "copiedCommand": "Command copied",
+      "expires": "The code works until {time}.",
+      "expired": "This code expired. Get a new one.",
+      "privateHint": "In a private chat with the bot, “/link code” is enough.",
+      "copyFailed": "Could not copy, select the command by hand",
+      "addToGroup": "Add the bot to a group",
+      "notConnected": "Telegram is currently unavailable for Bumbli. Try again later."
+    }
   },
   "join": {
     "working": "Signing you in…",
     "invalid": "This link is invalid or already used. Ask an adult for a new one.",
     "failed": "Could not sign you in. Check your connection and open the link again.",
-    "create": "Create a family"
+    "create": "Create a family",
+    "invalidTitle": "This link does not open",
+    "failedTitle": "Could not sign you in"
   }
 }

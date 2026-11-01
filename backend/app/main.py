@@ -44,11 +44,11 @@ class TelegramRuntime:
 
     def __init__(self, runner: UpdateRunner, sender: TelegramSender) -> None:
         self.runner = runner
-        self._sender = sender
+        self.sender = sender
 
     async def close(self) -> None:
-        if isinstance(self._sender, AiogramSender):
-            await self._sender.close()
+        if isinstance(self.sender, AiogramSender):
+            await self.sender.close()
 
 
 async def _stop_telegram(telegram: TelegramRuntime | None) -> None:

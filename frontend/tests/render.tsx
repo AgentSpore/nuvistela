@@ -18,5 +18,6 @@ export const member = (over: Partial<Member> = {}): Member => ({
   age_band: "adult",
   role: "adult",
   interests: [],
+  is_owner: false,
   ...over,
 });

@@ -11,10 +11,16 @@ export const memberResponseSchema = z.object({
   age_band: z.enum(AGE_BANDS),
   role: z.enum(ROLES),
   interests: z.array(z.string()),
+  is_owner: z.boolean(),
 });
 const inviteSchema = z.object({ member: memberResponseSchema, invite_url: z.string() });
 const createdSchema = inviteSchema.extend({ family_id: z.string() });
 const reissueSchema = z.object({ invite_url: z.string() });
+const linkCodeSchema = z.object({
+  code: z.string(),
+  expires_at: z.string(),
+  bot_username: z.string().nullable(),
+});
 const replySchema = z.object({ reply: z.string() });
 
 export type Member = z.infer<typeof memberResponseSchema>;
@@ -25,7 +31,8 @@ export type FamilyInput = {
   display_name: string;
   interests: string[];
 };
-export type MemberInput = Omit<Member, "id" | "family_id">;
+export type MemberInput = Omit<Member, "id" | "family_id" | "is_owner">;
+export type LinkCode = z.infer<typeof linkCodeSchema>;
 
 export class ApiError extends Error {
   constructor(
@@ -77,6 +84,8 @@ export const listMembers = (familyId: string) =>
 export const acceptInvite = (token: string) =>
   request("/invite/accept", memberResponseSchema, post({ token }));
 export const getMe = () => request("/me", memberResponseSchema);
+export const issueTelegramCode = (familyId: string) =>
+  request(`/families/${familyId}/telegram/link-code`, linkCodeSchema, post());
 export const sendAgentMessage = (text: string) =>
   request("/agent/messages", replySchema, post({ text }));
 

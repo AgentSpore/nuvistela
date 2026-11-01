@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { acceptInvite, ApiError } from "@/lib/api";
+import { buttonClass } from "@/components/ui/button";
 
 /** 401: invalid, expired or used token; 422: malformed (e.g. oversized) token. */
 const REJECTED = new Set([401, 422]);
@@ -37,19 +38,31 @@ export function Join() {
 
   if (state === "working")
     return (
-      <p role="status" className="text-muted">
-        {t("working")}
-      </p>
+      <div role="status" className="flex flex-col items-center gap-4 pt-10 text-center">
+        <span
+          aria-hidden="true"
+          className="size-10 animate-spin rounded-full border-4 border-line border-t-honey-deep"
+        />
+        <h1 className="font-display text-xl font-semibold">{t("working")}</h1>
+      </div>
     );
   return (
-    <div role="alert" className="flex flex-col items-start gap-3">
-      <p className="font-medium text-danger">{t(state)}</p>
-      <Link
-        href="/new"
-        className="font-semibold text-accent underline underline-offset-4"
-      >
-        {t("create")}
-      </Link>
+    <div
+      role="alert"
+      className="rise rounded-3xl border border-line bg-card p-7 shadow-soft sm:p-9"
+    >
+      <h1 className="font-display text-2xl font-semibold">
+        {t(state === "invalid" ? "invalidTitle" : "failedTitle")}
+      </h1>
+      <p className="mt-2 text-muted">{t(state)}</p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          href="/new"
+          className={buttonClass(state === "failed" ? "ghost" : "primary")}
+        >
+          {t("create")}
+        </Link>
+      </div>
     </div>
   );
 }
