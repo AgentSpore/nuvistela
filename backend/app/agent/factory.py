@@ -45,7 +45,7 @@ def build_game_master(
         api_key=settings.openrouter_api_key.get_secret_value(), http_client=http_client
     )
     model_settings = OpenRouterModelSettings(
-        openrouter_provider={"data_collection": "deny", "zdr": True},
+        openrouter_provider={"data_collection": "deny", "zdr": True, "require_parameters": True},
         max_retries=0,  # the caller owns retries; one retry layer only
     )
     budget = Budget[GameDeps](

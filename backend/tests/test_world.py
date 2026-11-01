@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from uuid import UUID
 
 import pytest
 from fastapi import FastAPI
@@ -8,10 +9,12 @@ from pydantic import SecretStr
 from pydantic_ai.exceptions import ModelAPIError
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.agent.world_generator import build_world_generator
 from app.core.config import Settings
 from app.main import create_app
+from app.repositories.job_repository import JobRepository
 from app.workers.world_worker import WorldWorker
 from tests.conftest import _client
 from tests.test_world_api import PATH, adult_with_child
@@ -39,7 +42,7 @@ class Env:
     client: AsyncClient
     worker: WorldWorker
     prompts: list[str]
-    fail: list[bool]  # truthy = next generator call fails
+    fail: list[bool | Exception]  # truthy = next generator call fails
     echo: list[str]  # text the "model" echoes into location descriptions
 
     async def drain(self) -> int:
@@ -62,13 +65,13 @@ async def env(postgres_url: str, agent, db_fetch):
     )
     gen = build_world_generator(settings)
     prompts: list[str] = []
-    fail: list[bool] = []
+    fail: list[bool | Exception] = []
     echo: list[str] = [""]
 
     def script(messages, info) -> ModelResponse:
         prompts.append(json.dumps([str(m) for m in messages]))
-        if fail and fail.pop(0):
-            raise ModelAPIError("vendor/world-x", "boom")
+        if fail and (failure := fail.pop(0)):
+            raise failure if isinstance(failure, Exception) else ModelAPIError("m", "boom")
         ids = [
             line.split("member_id=")[1].split()[0]
             for line in prompts[-1].replace("\\n", "\n").splitlines()
@@ -140,3 +143,84 @@ async def test_chat_context_carries_world_summary(env: Env) -> None:
         await env.drain()
         await post()
     assert "Moon Harbor" in str(seen[-1]) and "Scout" in str(seen[-1])
+
+
+async def test_custom_genre_text_stays_out_of_image_prompts(env: Env) -> None:
+    adult, _, fid, *_ = await adult_with_child(env.client)
+    env.echo[0] = "a Dragon Bakery town"
+    body = {"genre": "custom", "custom_genre": "Dragon Bakery"}
+    await env.client.post(PATH.format(fid), headers=adult, json=body)
+    await env.drain()
+    world = (await env.client.get(PATH.format(fid), headers=adult)).json()["world"]
+    blob = " ".join(x["image_prompt"] for x in world["locations"] + world["heroes"]).lower()
+    assert blob and "dragon" not in blob and "bakery" not in blob
+
+
+async def test_job_payload_holds_no_names_or_interests(env: Env, db_fetch) -> None:
+    adult, _, fid, *_ = await adult_with_child(env.client)
+    await env.client.post(PATH.format(fid), headers=adult, json={"genre": "space"})
+    (row,) = await db_fetch("SELECT payload::text AS p FROM jobs WHERE family_id = $1", UUID(fid))
+    for private in ("Bobby", "Anya", "trains", "dinosaurs"):
+        assert private not in row["p"]
+    await env.drain()
+    assert "trains" in " ".join(env.prompts)  # the worker still reads interests from members
+
+
+async def test_superseded_job_cannot_overwrite_newer_world(env: Env) -> None:
+    adult, _, fid, *_ = await adult_with_child(env.client)
+    env.fail[:] = [True, True, True]
+    await env.client.post(PATH.format(fid), headers=adult, json={"genre": "space"})
+    await env.worker.run_once()
+    await env.worker.run_once()  # job A is on its last attempt
+    await env.client.post(PATH.format(fid) + "/regenerate", headers=adult)
+    await env.worker.run_once()  # A exhausts: its fallback must not replace B
+    got = (await env.client.get(PATH.format(fid), headers=adult)).json()
+    assert got["status"] == "pending"
+    await env.drain()
+    assert (await env.client.get(PATH.format(fid), headers=adult)).json()["status"] == "ready"
+
+
+async def test_unexpected_error_counts_as_an_attempt(env: Env, db_fetch) -> None:
+    adult, _, fid, *_ = await adult_with_child(env.client)
+    env.fail[:] = [RuntimeError("boom")]
+    await env.client.post(PATH.format(fid), headers=adult, json={"genre": "space"})
+    await env.worker.run_once()
+    (row,) = await db_fetch(
+        "SELECT status, attempts, last_error FROM jobs WHERE family_id = $1", UUID(fid)
+    )
+    assert (row["status"], row["attempts"], row["last_error"]) == ("pending", 1, "RuntimeError")
+    await env.drain()
+
+
+async def test_crash_looping_job_ends_in_fallback_without_model_call(env: Env, db_fetch) -> None:
+    adult, _, fid, *_ = await adult_with_child(env.client)
+    await env.client.post(PATH.format(fid), headers=adult, json={"genre": "space"})
+    for _ in range(3):  # a worker that dies after claiming, three times
+        async with env.app.state.engine.begin() as conn:
+            assert await JobRepository(conn).claim(["world"]) is not None
+        await db_fetch("UPDATE jobs SET locked_at = now() - interval '1 hour'")
+    assert await env.worker.run_once()
+    assert (await env.client.get(PATH.format(fid), headers=adult)).json()["status"] == "fallback"
+    assert env.prompts == []
+
+
+async def test_lifespan_waits_for_worker_before_disposing_engine(
+    postgres_url: str, agent, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = Settings(
+        database_url=postgres_url,
+        world_model="vendor/world-x",
+        openrouter_api_key=SecretStr("k"),
+    )
+    app = create_app(settings, agent=agent, world_generator=build_world_generator(settings))
+    done_at_dispose: list[bool] = []
+    real_dispose = AsyncEngine.dispose
+
+    async def dispose(self: AsyncEngine, close: bool = True) -> None:
+        done_at_dispose.append(app.state.world_worker.done())
+        await real_dispose(self, close)
+
+    monkeypatch.setattr(AsyncEngine, "dispose", dispose)
+    async with app.router.lifespan_context(app):
+        assert not app.state.world_worker.done()
+    assert done_at_dispose and all(done_at_dispose)

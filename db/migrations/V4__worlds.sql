@@ -8,6 +8,8 @@ CREATE TABLE worlds (
     genre        text NOT NULL CHECK (genre IN ('fairy_tale', 'space', 'pirates', 'custom')),
     custom_genre text CHECK (custom_genre IS NULL OR char_length(custom_genre) <= 60),
     world        jsonb,
+    -- The job allowed to write this row: a superseded job's result is dropped.
+    job_id       uuid,
     updated_at   timestamptz NOT NULL DEFAULT now()
 );
 

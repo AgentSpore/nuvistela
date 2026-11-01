@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -79,6 +80,14 @@ def _start_world_worker(
     return asyncio.create_task(WorldWorker(engine, generator, settings).run_forever())
 
 
+async def _stop_worker(task: asyncio.Task[None] | None) -> None:
+    """Cancel and wait, so the worker is not mid-query when the engine is disposed."""
+    if task is not None:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
 class TelegramRuntime:
     """What the webhook route needs: the update runner and the sender's cleanup."""
 
@@ -152,11 +161,12 @@ def create_app(
         try:
             app.state.agent = agent or _build_or_degrade(settings, app.state.spend_store)
             app.state.telegram = _build_telegram(app, settings, telegram_sender)
-            worker_task = _start_world_worker(engine, settings, world_generator)
+            worker_task = app.state.world_worker = _start_world_worker(
+                engine, settings, world_generator
+            )
             yield
         finally:
-            if worker_task is not None:
-                worker_task.cancel()
+            await _stop_worker(worker_task)
             await _stop_telegram(app.state.telegram)
             if pool is not None:
                 await pool.close()

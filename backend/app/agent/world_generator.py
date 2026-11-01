@@ -45,9 +45,10 @@ class WorldGenerator:
             self.prompt(payload), usage_limits=self._limits, timeout=self._timeout_s
         )
         world = result.output
-        if {str(h.member_id) for h in world.heroes} != {m["member_id"] for m in payload["members"]}:
+        heroes = [str(h.member_id) for h in world.heroes]
+        if sorted(heroes) != sorted(m["member_id"] for m in payload["members"]):
             raise WorldInvalid("heroes do not match the family members")
-        banned = [*payload["private"], *(w for n in payload["private"] for w in n.split())]
+        banned = [*payload["private"], payload["custom_genre"] or ""]
         banned += [i for m in payload["members"] for i in m["interests"]]
         banned += [m["age_band"] for m in payload["members"]]
         return with_image_prompts(world, payload["genre"], banned)

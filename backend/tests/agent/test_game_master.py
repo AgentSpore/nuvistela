@@ -69,7 +69,7 @@ async def test_request_carries_configured_model_and_zdr_routing(
     assert reply.text == "Hello family"
     (body,) = seen
     assert body["model"] == "vendor/model-x"
-    assert body["provider"] == {"data_collection": "deny", "zdr": True}
+    assert body["provider"] == {"data_collection": "deny", "zdr": True, "require_parameters": True}
     assert headers[0]["authorization"] == "Bearer test-key"
     assert "test-key" not in json.dumps(body)  # the key travels only in the header
 

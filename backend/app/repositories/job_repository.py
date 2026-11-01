@@ -68,24 +68,29 @@ class JobRepository:
             None if row is None else Job(row.id, row.kind, row.family_id, row.payload, row.attempts)
         )
 
-    async def complete(self, job_id: UUID) -> None:
-        await self._conn.execute(
-            text("UPDATE jobs SET status = 'done', locked_at = NULL WHERE id = :id"), {"id": job_id}
+    async def _finish(self, sql: str, params: dict) -> bool:
+        """True when this worker still held the lease (same attempt, still running)."""
+        return (await self._conn.execute(text(sql), params)).rowcount == 1
+
+    async def complete(self, job: Job) -> bool:
+        """Mark done; False when the lease was lost to another worker."""
+        return await self._finish(
+            "UPDATE jobs SET status = 'done', locked_at = NULL"
+            " WHERE id = :id AND status = 'running' AND attempts = :attempts",
+            {"id": job.id, "attempts": job.attempts},
         )
 
-    async def fail(self, job: Job, error: str, max_attempts: int, retry_in: timedelta) -> bool:
-        """Release the job for a retry, or mark it failed. True when attempts are exhausted."""
-        exhausted = job.attempts >= max_attempts
-        await self._conn.execute(
-            text(
-                "UPDATE jobs SET status = :status, locked_at = NULL, last_error = :error,"
-                " next_run_at = now() + CAST(:retry AS interval) WHERE id = :id"
-            ),
+    async def fail(self, job: Job, error: str, final: bool, retry_in: timedelta) -> bool:
+        """Release the job for a retry, or mark it failed when `final`. False if lease lost."""
+        return await self._finish(
+            "UPDATE jobs SET status = :status, locked_at = NULL, last_error = :error,"
+            " next_run_at = now() + CAST(:retry AS interval)"
+            " WHERE id = :id AND status = 'running' AND attempts = :attempts",
             {
                 "id": job.id,
-                "status": "failed" if exhausted else "pending",
+                "attempts": job.attempts,
+                "status": "failed" if final else "pending",
                 "error": error,
                 "retry": retry_in,
             },
         )
-        return exhausted

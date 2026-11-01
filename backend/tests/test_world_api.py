@@ -1,3 +1,5 @@
+import asyncio
+
 from httpx import AsyncClient
 
 PATH = "/api/v1/families/{}/world"
@@ -42,3 +44,11 @@ async def test_regenerate_is_limited_per_day(client: AsyncClient) -> None:
         r = await client.post(PATH.format(fid) + "/regenerate", headers=adult)
         codes.append(r.status_code)
     assert codes == [202, 202, 429, 429]
+
+
+async def test_parallel_requests_cannot_exceed_the_daily_limit(client: AsyncClient) -> None:
+    adult, _, fid, *_ = await adult_with_child(client)
+    results = await asyncio.gather(
+        *(client.post(PATH.format(fid), headers=adult, json={"genre": "space"}) for _ in range(6))
+    )
+    assert sorted(r.status_code for r in results) == [202, 202, 202, 429, 429, 429]

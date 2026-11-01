@@ -3,19 +3,18 @@
 import asyncio
 import logging
 from datetime import timedelta
-from uuid import UUID
 
-from pydantic_ai.exceptions import ModelAPIError, UnexpectedModelBehavior, UsageLimitExceeded
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.agent.world_generator import WorldGenerator, WorldInvalid
+from app.agent.world_generator import WorldGenerator
 from app.core.config import Settings
+from app.domain.family import Member
 from app.domain.world_fallback import fallback_world
+from app.repositories.family_repository import FamilyRepository
 from app.repositories.job_repository import Job, JobRepository
 from app.repositories.world_repository import WorldRepository
 
 logger = logging.getLogger(__name__)
-_FAILURES = (ModelAPIError, UnexpectedModelBehavior, UsageLimitExceeded, TimeoutError, WorldInvalid)
 
 
 class WorldWorker:
@@ -29,29 +28,49 @@ class WorldWorker:
         """Process one due job; False when the queue is empty. The model runs outside any tx."""
         async with self._engine.begin() as conn:
             job = await JobRepository(conn).claim(["world"])
+            members = await FamilyRepository(conn).list_members(job.family_id) if job else []
         if job is None:
             return False
+        if job.attempts > self._max_attempts:  # claimed again and again: the worker keeps dying
+            await self._record_failure(job, "AttemptsExceeded", members)
+            return True
         try:
-            world = await self._generator.generate(job.payload)
-        except _FAILURES as exc:
+            world = await self._generator.generate(self._spec(job, members))
+        except Exception as exc:  # any failure is one attempt
             # Class name only: provider text may carry request details.
             logger.warning("world job failed: %s attempt=%s", type(exc).__name__, job.attempts)
-            await self._record_failure(job, type(exc).__name__)
+            await self._record_failure(job, type(exc).__name__, members)
             return True
         async with self._engine.begin() as conn:
-            await WorldRepository(conn).save(job.family_id, "ready", world)
-            await JobRepository(conn).complete(job.id)
+            stored = await WorldRepository(conn).save(job.family_id, "ready", world, job.id)
+            if not await JobRepository(conn).complete(job):
+                logger.warning("world job %s lost its lease before completing", job.id)
+        if not stored:
+            logger.info("world job %s was superseded: result dropped", job.id)
         return True
 
-    async def _record_failure(self, job: Job, error: str) -> None:
+    @staticmethod
+    def _spec(job: Job, members: list[Member]) -> dict:
+        """The generator input: queue payload plus members read now, so names never sit in jobs."""
+        return {
+            **job.payload,
+            "members": [
+                {"member_id": str(m.id), "age_band": m.age_band.value, "interests": m.interests}
+                for m in members
+            ],
+            "private": [m.display_name for m in members],
+        }
+
+    async def _record_failure(self, job: Job, error: str, members: list[Member]) -> None:
+        final = job.attempts >= self._max_attempts
         async with self._engine.begin() as conn:
-            exhausted = await JobRepository(conn).fail(
-                job, error, self._max_attempts, self._retry_in
-            )
-            if exhausted:
-                ids = [UUID(m["member_id"]) for m in job.payload["members"]]
+            if not await JobRepository(conn).fail(job, error, final, self._retry_in):
+                logger.warning("world job %s lost its lease before failing", job.id)
+                return
+            if final:
+                ids = [m.id for m in members]
                 world = fallback_world(job.payload["genre"], job.payload["locale"], ids)
-                await WorldRepository(conn).save(job.family_id, "fallback", world)
+                await WorldRepository(conn).save(job.family_id, "fallback", world, job.id)
 
     async def run_forever(self) -> None:
         while True:

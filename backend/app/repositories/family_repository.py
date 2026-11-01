@@ -158,6 +158,12 @@ class FamilyRepository:
             text("DELETE FROM sessions WHERE member_id = :id"), {"id": member_id}
         )
 
+    async def lock_family(self, family_id: UUID) -> None:
+        """Serialise concurrent per-family work (row lock held until the transaction ends)."""
+        await self._conn.execute(
+            text("SELECT 1 FROM families WHERE id = :id FOR UPDATE"), {"id": family_id}
+        )
+
     async def set_interests(self, member_id: UUID, interests: tuple[str, ...]) -> None:
         await self._conn.execute(
             text("UPDATE members SET interests = CAST(:interests AS text[]) WHERE id = :id"),

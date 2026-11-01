@@ -36,40 +36,33 @@ class WorldService:
             raise NotFound("family not found")
         if actor.role is not Role.ADULT:
             raise Forbidden("only adults can create the world")
+        await self._families.lock_family(family_id)  # makes the count below race-free
         previous = await self._worlds.get(family_id)
         genre, custom = form.genre, form.custom_genre
         if genre is None:
             if previous is None:
                 raise NotFound("world not found")
             genre, custom = previous.genre, previous.custom_genre
-        if await self._jobs.count_recent("world", family_id, timedelta(days=1)) >= self.DAILY_LIMIT:
+        window = timedelta(days=1)
+        if await self._jobs.count_recent("world", family_id, window) >= self.DAILY_LIMIT:
             raise RateLimited("the world was requested too often today, try again tomorrow")
-        members = await self._apply_interests(family_id, form.interests)
-        await self._worlds.request(family_id, genre, custom)
+        await self._apply_interests(family_id, form.interests)
         family = await self._families.get_family(family_id)
-        await self._jobs.enqueue(
-            "world",
-            family_id,
-            {
-                "genre": genre,
-                "custom_genre": custom,
-                "locale": family.locale if family else "ru",
-                "members": [
-                    {"member_id": str(m.id), "age_band": m.age_band.value, "interests": m.interests}
-                    for m in members
-                ],
-                "private": [m.display_name for m in members],
-            },
-        )
+        # Ids only: names and interests are read by the worker, not kept in the queue.
+        payload = {
+            "genre": genre,
+            "custom_genre": custom,
+            "locale": family.locale if family else "ru",
+        }
+        job_id = await self._jobs.enqueue("world", family_id, payload)
+        await self._worlds.request(family_id, genre, custom, job_id)
         return StoredWorld("pending", genre, custom, previous.world if previous else None)
 
     async def _apply_interests(
         self, family_id: UUID, interests: dict[UUID, tuple[str, ...]]
-    ) -> list[Member]:
-        members = await self._families.list_members(family_id)
-        known = {m.id for m in members}
+    ) -> None:
+        known = {m.id for m in await self._families.list_members(family_id)}
         if not set(interests) <= known:
             raise NotFound("member not found")
         for member_id, values in interests.items():
             await self._families.set_interests(member_id, values)
-        return await self._families.list_members(family_id) if interests else members

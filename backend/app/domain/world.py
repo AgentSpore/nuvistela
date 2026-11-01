@@ -48,11 +48,26 @@ class World(BaseModel):
     cover_image_prompt: str = Field(default="", description="Leave empty: the service fills it.")
 
 
+def _is_same_word(token: str, banned: str) -> bool:
+    """Exact match, or for a banned word of 4+ letters a declension: same stem, similar length."""
+    if token == banned:
+        return True
+    return len(banned) >= 4 and token.startswith(banned[:-1]) and len(token) - len(banned) <= 3
+
+
 def scrub(text: str, banned: Iterable[str]) -> str:
-    """Remove every banned string (case-insensitive) and every digit run (ages)."""
-    for word in sorted((b for b in banned if b.strip()), key=len, reverse=True):
-        text = re.sub(re.escape(word.strip()), "", text, flags=re.IGNORECASE)
-    return re.sub(r"\s+", " ", re.sub(r"\d+", "", text)).strip(" ,.")
+    """Remove banned words (also their declensions) and every digit run (ages).
+
+    Matching is per word, never per substring, so a short name cannot mangle other words.
+    """
+    words = {w for b in banned for w in re.findall(r"\w+", b.lower())}
+
+    def drop(m: re.Match[str]) -> str:
+        return "" if any(_is_same_word(m.group().lower(), w) for w in words) else m.group()
+
+    text = re.sub(r"\d+", "", re.sub(r"\w+", drop, text))
+    text = re.sub(r"(?<!\w)-+(?!\w)", "", text)
+    return re.sub(r"\s+([,.])", r"\1", re.sub(r"\s+", " ", text)).strip(" ,.")
 
 
 def with_image_prompts(world: World, genre: str, banned: Iterable[str]) -> World:
