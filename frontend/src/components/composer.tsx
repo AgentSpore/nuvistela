@@ -15,6 +15,20 @@ type Props = {
 
 const COUNTER_FROM = MAX_MESSAGE_CHARS * 0.8;
 
+function Counter({ length, over }: { length: number; over: boolean }) {
+  const t = useTranslations("play");
+  if (length < COUNTER_FROM) return null;
+  return (
+    <p
+      role="status"
+      aria-label={t("counterLabel", { count: length, max: MAX_MESSAGE_CHARS })}
+      className={`ml-auto font-semibold tabular-nums ${over ? "text-danger" : ""}`}
+    >
+      {t("counter", { count: length, max: MAX_MESSAGE_CHARS })}
+    </p>
+  );
+}
+
 /** Message box: Enter sends, Shift+Enter adds a line, the counter appears near the limit. */
 export function Composer({ value, onChange, onSend, busy }: Props) {
   const t = useTranslations("play");
@@ -71,15 +85,7 @@ export function Composer({ value, onChange, onSend, busy }: Props) {
         <p id="composer-hint" className="max-sm:sr-only">
           {t("hint")}
         </p>
-        {length >= COUNTER_FROM && (
-          <p
-            role="status"
-            aria-label={t("counterLabel", { count: length, max: MAX_MESSAGE_CHARS })}
-            className={`ml-auto font-semibold tabular-nums ${over ? "text-danger" : ""}`}
-          >
-            {t("counter", { count: length, max: MAX_MESSAGE_CHARS })}
-          </p>
-        )}
+        <Counter length={length} over={over} />
       </div>
     </form>
   );
