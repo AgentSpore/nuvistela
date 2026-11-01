@@ -58,7 +58,7 @@ async def _bot_username(request: Request) -> str | None:
     if telegram is None:
         return None
     try:
-        return (await telegram._sender.me()).username or None
+        return (await telegram.sender.me()).username or None
     except AiogramError:
         logger.warning("telegram getMe failed: link code issued without the bot username")
         return None
