@@ -6,15 +6,18 @@ from uuid import UUID
 
 from app.domain.errors import Forbidden, NotFound, Unauthorized
 from app.domain.family import AgeBand, Family, Member, NewMember, Role
+from app.domain.funnel import EventKind
 from app.repositories.family_repository import FamilyRepository
+from app.services.funnel_service import FunnelService
 
 
 class FamilyService:
     INVITE_TTL = timedelta(days=7)
     SESSION_TTL = timedelta(days=365)
 
-    def __init__(self, repo: FamilyRepository) -> None:
+    def __init__(self, repo: FamilyRepository, funnel: FunnelService) -> None:
         self._repo = repo
+        self._funnel = funnel
 
     @staticmethod
     def hash_token(token: str) -> str:
@@ -45,6 +48,7 @@ class FamilyService:
         adult = NewMember(first_adult, AgeBand.ADULT, Role.ADULT, interests)
         member = await self._repo.add_member(family.id, adult, invite_hash, self._invite_expiry())
         await self._repo.set_owner(family.id, member.id)
+        await self._funnel.record_event(EventKind.FAMILY_CREATED, family.id, member.id)
         return family, replace(member, is_owner=True), invite, await self._open_session(member.id)
 
     async def accept_invite(self, invite: str) -> tuple[Member, str]:
