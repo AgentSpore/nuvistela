@@ -48,6 +48,13 @@ class WorldRepository:
         world = World.model_validate(row.world) if row.world is not None else None
         return StoredWorld(row.status, row.genre, row.custom_genre, world)
 
+    async def current_job_id(self, family_id: UUID) -> UUID | None:
+        """The job allowed to write this family's world, None when there is no world."""
+        row = await self._conn.execute(
+            text("SELECT job_id FROM worlds WHERE family_id = :f"), {"f": family_id}
+        )
+        return row.scalar_one_or_none()
+
     async def save(self, family_id: UUID, status: WorldStatus, world: World, job_id: UUID) -> bool:
         """Store the result; False (nothing written) when a newer request replaced this job."""
         result = await self._conn.execute(

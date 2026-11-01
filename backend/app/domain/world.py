@@ -49,10 +49,11 @@ class World(BaseModel):
 
 
 def _is_same_word(token: str, banned: str) -> bool:
-    """Exact match, or for a banned word of 4+ letters a declension: same stem, similar length."""
+    """Exact match, or a declension: the word minus a final vowel, plus at most 2 letters."""
     if token == banned:
         return True
-    return len(banned) >= 4 and token.startswith(banned[:-1]) and len(token) - len(banned) <= 3
+    stem = banned[:-1] if banned[-1] in "аяыиеёуюоэьйaeiouy" else banned
+    return len(stem) >= 2 and token.startswith(stem) and len(token) - len(stem) <= 2
 
 
 def scrub(text: str, banned: Iterable[str]) -> str:

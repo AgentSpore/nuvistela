@@ -224,3 +224,16 @@ async def test_lifespan_waits_for_worker_before_disposing_engine(
     async with app.router.lifespan_context(app):
         assert not app.state.world_worker.done()
     assert done_at_dispose and all(done_at_dispose)
+
+
+async def test_superseded_job_is_completed_without_calling_the_model(env: Env, db_fetch) -> None:
+    adult, _, fid, *_ = await adult_with_child(env.client)
+    env.fail[:] = [True]
+    await env.client.post(PATH.format(fid), headers=adult, json={"genre": "space"})
+    await env.worker.run_once()  # job A fails once and waits for a retry
+    await env.client.post(PATH.format(fid) + "/regenerate", headers=adult)
+    await env.drain()
+    assert len(env.prompts) == 2  # A's failed call and B's call; A's retry is skipped
+    rows = await db_fetch("SELECT status FROM jobs WHERE family_id = $1", UUID(fid))
+    assert [r["status"] for r in rows] == ["done", "done"]
+    assert (await env.client.get(PATH.format(fid), headers=adult)).json()["status"] == "ready"

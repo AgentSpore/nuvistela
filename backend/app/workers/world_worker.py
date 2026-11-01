@@ -29,6 +29,11 @@ class WorldWorker:
         async with self._engine.begin() as conn:
             job = await JobRepository(conn).claim(["world"])
             members = await FamilyRepository(conn).list_members(job.family_id) if job else []
+            current = await WorldRepository(conn).current_job_id(job.family_id) if job else None
+            if job is not None and current != job.id:
+                await JobRepository(conn).complete(job)
+                logger.info("world job %s was superseded before generating", job.id)
+                return True
         if job is None:
             return False
         if job.attempts > self._max_attempts:  # claimed again and again: the worker keeps dying
