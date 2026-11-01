@@ -71,7 +71,7 @@ describe("telegram card", () => {
     m.issueTelegramCode.mockResolvedValue(code({ bot_username: null }));
     renderRu(<TelegramCard familyId="f1" />);
     await getCode();
-    expect(await screen.findByText(/Telegram ещё не подключён/)).toBeInTheDocument();
+    expect(await screen.findByText(/Telegram сейчас недоступен/)).toBeInTheDocument();
     expect(screen.queryByText(/\/link/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Добавить бота в группу" })).toBeNull();
   });

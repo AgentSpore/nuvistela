@@ -175,7 +175,7 @@
       "privateHint": "In a private chat with the bot, “/link code” is enough.",
       "copyFailed": "Could not copy, select the command by hand",
       "addToGroup": "Add the bot to a group",
-      "notConnected": "Telegram is not connected to Bumbli yet, so there is no command. Try again later."
+      "notConnected": "Telegram is currently unavailable for Bumbli. Try again later."
     }
   },
   "join": {

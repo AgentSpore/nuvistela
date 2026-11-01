@@ -90,14 +90,13 @@ const NOTE_TONE: Partial<Record<AgentNote, Tone>> = {
 const NEAR_BOTTOM_PX = 80;
 
 /** Keeps the log pinned to the newest line unless the reader scrolled up to reread. */
-function useStickyScroll(deps: unknown[]) {
+function useStickyScroll(key: string) {
   const scroller = useRef<HTMLDivElement>(null);
   const stuck = useRef(true);
   useEffect(() => {
     const el = scroller.current;
     if (el && stuck.current) el.scrollTop = el.scrollHeight;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are the caller's explicit scroll triggers
-  }, deps);
+  }, [key]);
   const onScroll = () => {
     const el = scroller.current;
     if (el)
@@ -148,7 +147,9 @@ function Chat({ me }: { me: Member }) {
   const [draft, setDraft] = useState("");
   const [note, setNote] = useState<AgentNote | null>(null);
   const [busy, setBusy] = useState(false);
-  const { scroller, onScroll, stick } = useStickyScroll([messages, busy, note]);
+  const { scroller, onScroll, stick } = useStickyScroll(
+    `${messages.length}|${busy}|${note}`,
+  );
 
   async function send() {
     const text = draft.trim();

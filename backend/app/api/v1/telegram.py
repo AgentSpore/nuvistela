@@ -1,3 +1,4 @@
+import asyncio
 import hmac
 import logging
 from typing import Annotated
@@ -17,6 +18,7 @@ from app.services.telegram_link import TelegramLinkService
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
 
+ME_TIMEOUT_S = 2.0  # aiogram would wait 60 s while Telegram is unreachable
 SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 
 
@@ -58,7 +60,7 @@ async def _bot_username(request: Request) -> str | None:
     if telegram is None:
         return None
     try:
-        return (await telegram.sender.me()).username or None
-    except AiogramError:
+        return (await asyncio.wait_for(telegram.sender.me(), ME_TIMEOUT_S)).username or None
+    except (AiogramError, TimeoutError):
         logger.warning("telegram getMe failed: link code issued without the bot username")
         return None

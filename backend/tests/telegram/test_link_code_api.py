@@ -1,8 +1,11 @@
+import asyncio
+import time
 from datetime import UTC, datetime, timedelta
 
 from aiogram.exceptions import TelegramNetworkError
 from aiogram.methods import GetMe
 
+from app.api.v1 import telegram as telegram_api
 from tests.telegram.conftest import BOT
 from tests.test_agent_api import make_member
 
@@ -69,5 +72,19 @@ async def test_getme_failure_still_issues_the_code(tg, sender) -> None:
     sender.me = broken
     cookie, family_id = await make_member(tg)
     resp = await tg.post(CODE_URL.format(family_id), headers=cookie)
+    assert resp.status_code == 200
+    assert resp.json()["bot_username"] is None
+
+
+async def test_hanging_getme_is_bounded(tg, sender, monkeypatch) -> None:
+    async def never():
+        await asyncio.Event().wait()
+
+    sender.me = never
+    monkeypatch.setattr(telegram_api, "ME_TIMEOUT_S", 0.2)
+    cookie, family_id = await make_member(tg)
+    started = time.monotonic()
+    resp = await asyncio.wait_for(tg.post(CODE_URL.format(family_id), headers=cookie), 5)
+    assert time.monotonic() - started < 2
     assert resp.status_code == 200
     assert resp.json()["bot_username"] is None
