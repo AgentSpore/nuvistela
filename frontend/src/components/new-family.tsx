@@ -43,6 +43,54 @@ function Steps({ current }: { current: 1 | 2 }) {
   );
 }
 
+type Values = { title: string; name: string; interests: string };
+type FieldsProps = {
+  v: Values;
+  set: (k: keyof Values) => (val: string) => void;
+  err: (k: string) => string | undefined;
+  busy: boolean;
+};
+
+function FamilyFields({ v, set, err, busy }: FieldsProps) {
+  const t = useTranslations("new");
+  return (
+    <>
+      <TextField
+        id="f-title"
+        label={t("title")}
+        value={v.title}
+        onChange={set("title")}
+        maxLength={80}
+        error={err("title")}
+      />
+      <TextField
+        id="f-name"
+        label={t("name")}
+        value={v.name}
+        onChange={set("name")}
+        maxLength={40}
+        error={err("display_name")}
+      />
+      <TextField
+        id="f-interests"
+        label={t("interests")}
+        hint={t("interestsHint")}
+        value={v.interests}
+        onChange={set("interests")}
+        error={err("interests")}
+      />
+      <Button
+        type="submit"
+        disabled={busy}
+        aria-busy={busy}
+        className="mt-1 w-full sm:w-auto sm:self-start"
+      >
+        {t("submit")}
+      </Button>
+    </>
+  );
+}
+
 type Created = Invite & { family_id: string };
 
 function FamilyForm({ onCreated }: { onCreated: (created: Created) => void }) {
@@ -83,38 +131,7 @@ function FamilyForm({ onCreated }: { onCreated: (created: Created) => void }) {
         </div>
       )}
       <form onSubmit={submit} noValidate className={`${cardCls} flex flex-col gap-5`}>
-        <TextField
-          id="f-title"
-          label={t("title")}
-          value={v.title}
-          onChange={set("title")}
-          maxLength={80}
-          error={err("title")}
-        />
-        <TextField
-          id="f-name"
-          label={t("name")}
-          value={v.name}
-          onChange={set("name")}
-          maxLength={40}
-          error={err("display_name")}
-        />
-        <TextField
-          id="f-interests"
-          label={t("interests")}
-          hint={t("interestsHint")}
-          value={v.interests}
-          onChange={set("interests")}
-          error={err("interests")}
-        />
-        <Button
-          type="submit"
-          disabled={busy}
-          aria-busy={busy}
-          className="mt-1 w-full sm:w-auto sm:self-start"
-        >
-          {t("submit")}
-        </Button>
+        <FamilyFields v={v} set={set} err={err} busy={busy} />
       </form>
     </>
   );
