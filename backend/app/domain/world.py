@@ -48,12 +48,18 @@ class World(BaseModel):
     cover_image_prompt: str = Field(default="", description="Leave empty: the service fills it.")
 
 
+_CASE_ENDINGS = frozenset(
+    "а я у ю е и ы о ой ей ом ем ам ям ах ях ами ями ов ев ью ею ою ёй ём".split()
+)
+_VOWEL_ENDINGS = "аяыиеёуюоэьй"
+
+
 def _is_same_word(token: str, banned: str) -> bool:
-    """Exact match, or a declension: the word minus a final vowel, plus at most 2 letters."""
+    """Exact match; for Cyrillic also the name's stem plus a real Russian case or number ending."""
     if token == banned:
         return True
-    stem = banned[:-1] if banned[-1] in "аяыиеёуюоэьйaeiouy" else banned
-    return len(stem) >= 2 and token.startswith(stem) and len(token) - len(stem) <= 2
+    stem = banned[:-1] if banned[-1] in _VOWEL_ENDINGS else banned
+    return token.startswith(stem) and token[len(stem) :] in _CASE_ENDINGS
 
 
 def scrub(text: str, banned: Iterable[str]) -> str:

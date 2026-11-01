@@ -1,3 +1,5 @@
+import pytest
+
 from app.domain.world import scrub
 
 
@@ -28,3 +30,42 @@ def test_scrub_removes_declensions_of_a_three_letter_name() -> None:
 def test_scrub_keeps_unrelated_words_with_the_same_first_letters() -> None:
     assert scrub("Остров, который любит", ["кот"]) == "Остров, который любит"
     assert scrub("Остров, который любит", ["коты"]) == "Остров, который любит"
+
+
+@pytest.mark.parametrize(
+    ("name", "word"),
+    [
+        ("Ира", "ирис"),
+        ("Ира", "ирга"),
+        ("море", "мороз"),
+        ("море", "морж"),
+        ("Ника", "никто"),
+        ("Ника", "никак"),
+        ("Ден", "день"),
+        ("Ян", "янка"),
+        ("Leo", "leaf"),
+        ("Leo", "left"),
+        ("Mia", "mint"),
+        ("Mia", "mild"),
+        ("Mia", "mist"),
+        ("Eva", "even"),
+        ("Eva", "ever"),
+        ("Ия", "и"),
+    ],
+)
+def test_scrub_keeps_ordinary_words_that_share_a_stem(name: str, word: str) -> None:
+    assert scrub(f"{word} тут", [name]) == f"{word} тут"
+
+
+@pytest.mark.parametrize(
+    ("name", "forms"),
+    [
+        ("Ден", "Ден Дена Дену"),
+        ("Ия", "Ия Ии Ию"),
+        ("Лев", "Леву"),
+        ("Ира", "Иры Иру Ирой"),
+        ("Mia", "Mia mia"),
+    ],
+)
+def test_scrub_removes_real_case_forms(name: str, forms: str) -> None:
+    assert scrub(forms, [name]) == ""
