@@ -94,10 +94,13 @@ async def test_child_reissues_nothing(
     assert (await _reissue(client, kid, owner), await _reissue(client, kid, kid)) == (403, 403)
 
 
-async def test_cross_family_reissue_is_404(client: AsyncClient, owner: Person) -> None:
+async def test_child_reissuing_other_family_member_is_404(
+    client: AsyncClient, owner: Person, add: Callable[[dict[str, str]], Awaitable[Person]]
+) -> None:
+    kid = await add(CHILD_BODY)
     other = await client.post("/api/v1/families", json={"title": "Jones", "display_name": "Bob"})
     stranger = Person(other.json()["member"]["id"], other.json()["family_id"], "", {})
-    assert await _reissue(client, owner, stranger) == 404
+    assert await _reissue(client, kid, stranger) == 404
 
 
 async def test_is_owner_true_only_for_creator(
