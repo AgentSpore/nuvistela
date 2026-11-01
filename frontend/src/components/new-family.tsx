@@ -94,7 +94,6 @@ function FamilyFields({ v, set, err, busy }: FieldsProps) {
 type Created = Invite & { family_id: string };
 
 function FamilyForm({ onCreated }: { onCreated: (created: Created) => void }) {
-  const t = useTranslations("new");
   const te = useTranslations("errors");
   const locale = useLocale();
   const [v, setV] = useState({ title: "", name: "", interests: "" });
