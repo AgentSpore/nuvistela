@@ -45,13 +45,13 @@ FamilyServiceDep = Annotated[FamilyService, Depends(get_family_service)]
 
 async def current_member(
     service: FamilyServiceDep,
-    funnel: FunnelServiceDep,
+    request: Request,
     session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
 ) -> Member:
     if not session:
         raise Unauthorized("not authenticated")
     member = await service.authenticate(session)
-    await funnel.note_activity(member)
+    await FunnelService.track_activity(request.app.state.engine, member)
     return member
 
 

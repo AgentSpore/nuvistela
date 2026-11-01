@@ -15,6 +15,7 @@ def format_report(steps: list[FunnelStep], days: int) -> str:
     for step in steps:
         conv = "-" if step.conversion is None else f"{step.conversion:.1%}"
         lines.append(f"{step.kind.value:<20}{step.count:>8}{conv:>12}")
+    lines.append("return_d1/return_d7: families created in the window with a returning member")
     return "\n".join(lines)
 
 

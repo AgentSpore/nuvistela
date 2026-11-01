@@ -81,6 +81,14 @@ def _build_telegram(
     )
 
 
+def _include_routers(app: FastAPI) -> None:
+    app.include_router(health_router)
+    app.include_router(families_router)
+    app.include_router(agent_router)
+    app.include_router(funnel_router)
+    app.include_router(telegram_router)
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -135,7 +143,6 @@ def create_app(
 
     app = FastAPI(title="Bumbli", lifespan=lifespan)
     app.state.settings = settings
-    for router in (health_router, families_router, agent_router, funnel_router, telegram_router):
-        app.include_router(router)
+    _include_routers(app)
     register_error_handlers(app)
     return app

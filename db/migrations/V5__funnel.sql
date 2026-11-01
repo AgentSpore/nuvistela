@@ -19,6 +19,7 @@ CREATE TABLE events (
     props     jsonb NOT NULL DEFAULT '{}'
 );
 CREATE INDEX events_kind_at_idx ON events (kind, at);
+CREATE INDEX events_member_at_idx ON events (member_id, at) WHERE member_id IS NOT NULL;
 -- Once-per-member kinds: concurrent requests cannot write a second row.
 CREATE UNIQUE INDEX events_member_once_idx ON events (member_id, kind)
     WHERE kind IN ('member_first_seen', 'return_d1', 'return_d7');

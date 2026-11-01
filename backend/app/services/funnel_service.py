@@ -2,6 +2,8 @@ from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncEngine
+
 from app.domain.family import Member
 from app.domain.funnel import ALLOWED_PROPS, RETURN_DAYS, EventKind, FunnelStep
 from app.repositories.funnel_repository import FunnelRepository
@@ -63,19 +65,26 @@ class FunnelService:
             await self.record_event(EventKind.WAITLIST_JOIN, props=props)
 
     async def note_activity(self, member: Member) -> None:
-        """Write member_first_seen, then return_d1 / return_d7 on exactly that calendar day (UTC).
-
-        The database is asked once per member and day; later requests hit the process memo.
-        """
+        """Write member_first_seen, then return_d1 / return_d7 on exactly that UTC calendar day."""
         today = datetime.now(UTC).date()
-        if self._checked_today.seen(member.id, today):
-            return
         first_day = await self._repo.first_event_day(member.id)
         if first_day is None:
             await self.record_event(EventKind.MEMBER_FIRST_SEEN, member.family_id, member.id)
         elif (kind := RETURN_DAYS.get((today - first_day).days)) is not None:
             await self.record_event(kind, member.family_id, member.id)
-        self._checked_today.add(member.id)
+
+    @classmethod
+    async def track_activity(cls, engine: AsyncEngine, member: Member) -> None:
+        """note_activity in its own transaction: a failing request cannot roll it back.
+
+        The database is asked once per member and day; the memo is marked only after the commit.
+        """
+        today = datetime.now(UTC).date()
+        if cls._checked_today.seen(member.id, today):
+            return
+        async with engine.begin() as conn:
+            await cls(FunnelRepository(conn)).note_activity(member)
+        cls._checked_today.add(member.id)
 
     async def report(self, days: int) -> list[FunnelStep]:
         return await self._repo.report(days)

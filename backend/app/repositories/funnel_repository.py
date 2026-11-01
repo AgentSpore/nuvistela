@@ -53,6 +53,21 @@ class FunnelRepository:
             )
         ).scalar_one()
 
+    async def _returned_families(self, days: int) -> dict[str, int]:
+        """Distinct families created in the window with a return event, per return kind."""
+        rows = await self._conn.execute(
+            text(
+                "SELECT r.kind, count(DISTINCT r.family_id) AS n FROM events r"
+                " WHERE r.kind IN ('return_d1', 'return_d7')"
+                " AND EXISTS (SELECT 1 FROM events c WHERE c.family_id = r.family_id"
+                " AND c.kind = 'family_created'"
+                " AND c.at >= now() - make_interval(days => :days))"
+                " GROUP BY r.kind"
+            ),
+            {"days": days},
+        )
+        return {row.kind: row.n for row in rows}
+
     async def report(self, days: int) -> list[FunnelStep]:
         rows = await self._conn.execute(
             text(
@@ -62,6 +77,7 @@ class FunnelRepository:
             {"days": days},
         )
         counts = {row.kind: row.n for row in rows}
+        counts.update(await self._returned_families(days))
         steps = []
         for kind, base in FUNNEL_STEPS:
             base_n = counts.get(base.value, 0) if base else 0

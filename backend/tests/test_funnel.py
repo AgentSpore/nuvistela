@@ -1,11 +1,14 @@
 import json
+from unittest.mock import AsyncMock
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.cli.funnel import format_report
 from app.domain.funnel import EventKind, FunnelStep
 from app.repositories.funnel_repository import FunnelRepository
+from app.services.funnel_service import FunnelService
 
 WAITLIST = {"email": "Mama@Example.com", "family_size": 4, "kids_age_bands": ["3-5", "6-9"]}
 FAMILY = {"title": "Secret Clan", "display_name": "Mama Zoya", "locale": "ru"}
@@ -25,13 +28,20 @@ async def test_waitlist_duplicate_gives_identical_response_and_one_row(client, d
 
 
 async def test_waitlist_join_event_written_once_without_email(client, db_fetch):
-    body = {**WAITLIST, "email": "once@example.com"}
+    body = {
+        "email": "once@example.com",
+        "family_size": 11,
+        "kids_age_bands": ["14-17"],
+        "locale": "en",
+    }
     await client.post("/api/v1/waitlist", json=body)
     await client.post("/api/v1/waitlist", json=body)
-    rows = await db_fetch("SELECT props FROM events WHERE kind = 'waitlist_join'")
-    mine = [json.loads(r["props"]) for r in rows if r["props"]]
-    assert {"family_size": 4, "kids_age_bands": ["3-5", "6-9"], "locale": "ru"} in mine
-    assert "once@example.com" not in json.dumps(mine)
+    rows = await db_fetch(
+        "SELECT props FROM events WHERE kind = 'waitlist_join' AND props = CAST($1 AS jsonb)",
+        json.dumps({"family_size": 11, "kids_age_bands": ["14-17"], "locale": "en"}),
+    )
+    assert len(rows) == 1
+    assert "once@example.com" not in rows[0]["props"]
 
 
 async def test_waitlist_rejects_bad_input(client):
@@ -130,3 +140,36 @@ def test_cli_format_report_shows_counts_and_conversion():
     ]
     out = format_report(steps, 30)
     assert "landing_view" in out and "20.0%" in out and "last 30 days" in out
+
+
+async def test_record_event_refuses_personal_props():
+    service = FunnelService(AsyncMock(spec=FunnelRepository))
+    with pytest.raises(ValueError):
+        await service.record_event(EventKind.QUEST_CREATED, props={"email": "x@y.zz"})
+
+
+async def test_return_d1_survives_a_rolled_back_request(client: AsyncClient, db_fetch):
+    other = (await client.post("/api/v1/families", json=FAMILY)).json()["family_id"]
+    me = (await client.post("/api/v1/families", json=FAMILY)).json()["member"]["id"]
+    await _backdate_first_event(db_fetch, me, 1)
+    foreign = await client.get(f"/api/v1/families/{other}/members")
+    assert foreign.status_code == 404
+    assert (await client.get("/api/v1/me")).status_code == 200
+    assert await _returns(db_fetch, me) == ["return_d1"]
+
+
+async def test_report_returns_count_families_of_the_window_cohort(
+    postgres_url, client: AsyncClient, db_fetch
+):
+    family = (await client.post("/api/v1/families", json=FAMILY)).json()["family_id"]
+    engine = create_async_engine(postgres_url)
+    async with engine.connect() as conn:
+        before = {s.kind: s for s in await FunnelRepository(conn).report(days=30)}
+        for _ in range(2):
+            await db_fetch(
+                "INSERT INTO events (family_id, kind) VALUES ($1::uuid, 'return_d1')", family
+            )
+        after = {s.kind: s for s in await FunnelRepository(conn).report(days=30)}
+    await engine.dispose()
+    assert after[EventKind.RETURN_D1].count == before[EventKind.RETURN_D1].count + 1
+    assert (after[EventKind.RETURN_D1].conversion or 0) <= 1
