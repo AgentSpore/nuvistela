@@ -13,7 +13,7 @@ backend app with a scripted test model (no LLM call), and the Next.js standalone
 ## Run
 
 ```bash
-env -u OPENROUTER_API_KEY TESTCONTAINERS_RYUK_DISABLED=true uv run --project e2e pytest e2e
+TESTCONTAINERS_RYUK_DISABLED=true uv run --project e2e pytest e2e
 ```
 
 The first run builds the frontend (about a minute). `-p harness` is set in `pyproject.toml`.

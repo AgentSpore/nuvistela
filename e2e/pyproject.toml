@@ -24,6 +24,9 @@ extra-paths = ["../backend"]
 # so the launcher is checked separately (see README).
 exclude = ["launcher.py"]
 
-[tool.ty.rules]
-# launcher.py ignores imports that only the backend venv has; that run sees them as unused
+[[tool.ty.overrides]]
+# the launcher ignores an import that only the backend venv has; that run sees it as unused
+include = ["launcher.py"]
+
+[tool.ty.overrides.rules]
 unused-ignore-comment = "ignore"

@@ -8,6 +8,7 @@ import socket
 import subprocess
 import time
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from typing import IO
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ class Service:
 class Stack:
     site: str  # frontend origin; /api/* is rewritten to the backend
     backend: str  # backend origin, for /health only
+    database_url: str  # the suite's Postgres, for assertions on stored state
 
 
 def free_port() -> int:
@@ -53,6 +55,20 @@ def _migration_files(directory: Path) -> list[Path]:
     ]
     repeatable = sorted(directory.glob("R__*.sql"))
     return [f for _, f in sorted(versioned)] + repeatable
+
+
+def count_rows(url: str, table: str) -> int:
+    """Row count of a fixed table name. Runs in a thread: Playwright's sync API owns this one's loop."""
+
+    async def count() -> int:
+        conn = await asyncpg.connect(url)
+        try:
+            return await conn.fetchval(f"SELECT count(*) FROM {table}") or 0
+        finally:
+            await conn.close()
+
+    with ThreadPoolExecutor(1) as pool:
+        return pool.submit(lambda: asyncio.run(count())).result()
 
 
 async def _migrate(url: str) -> None:
@@ -163,7 +179,9 @@ def running_stack() -> Generator[Stack]:
             )
             services.append(frontend)
             _wait(f"http://127.0.0.1:{fe_port}/", frontend.proc)
-            yield Stack(f"http://127.0.0.1:{fe_port}", f"http://127.0.0.1:{be_port}")
+            yield Stack(
+                f"http://127.0.0.1:{fe_port}", f"http://127.0.0.1:{be_port}", url
+            )
         finally:
             for svc in reversed(services):
                 _stop(svc)

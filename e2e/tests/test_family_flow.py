@@ -11,7 +11,7 @@ import httpx
 from playwright.sync_api import Page, expect
 
 from replies import ECHO, REPLY
-from stack import Stack
+from stack import Stack, count_rows
 
 Shot = Callable[[Page, str], None]
 NewPage = Callable[..., Page]
@@ -87,7 +87,9 @@ def test_child_opens_link_once_then_it_is_invalid(
     shot(again, "04-join-invalid")
 
 
-def test_message_gets_game_master_reply(new_page: NewPage, shot: Shot) -> None:
+def test_message_gets_game_master_reply(
+    new_page: NewPage, shot: Shot, stack: Stack
+) -> None:
     page = new_page(flow["child"])
     page.goto("/play")
     page.get_by_label("Сообщение ведущему").fill("Hello, game master!")
@@ -99,6 +101,8 @@ def test_message_gets_game_master_reply(new_page: NewPage, shot: Shot) -> None:
         [re.compile("Hello, game master!$"), echo]
     )
     shot(page, "05-play-with-reply")
+    # the turn went through the real PostgresSpendStore, not an in-memory one
+    assert count_rows(stack.database_url, "spend_counters") > 0
 
 
 def test_family_roster_lists_both_and_adult_controls(
@@ -127,14 +131,12 @@ def test_child_cannot_add_members_or_reissue(new_page: NewPage, shot: Shot) -> N
     # the UI hides the controls; the API must refuse them too
     api = page.context.request
     me = api.get("/api/v1/me").json()
-    members = api.get(f"/api/v1/families/{me['family_id']}/members").json()
-    adult = next(m for m in members if m["role"] == "adult")
     add = api.post(
         f"/api/v1/families/{me['family_id']}/members",
         data={"display_name": "Intruder", "age_band": "6-9", "role": "child"},
     )
     assert add.status == 403, add.status
-    reissue = api.post(f"/api/v1/members/{adult['id']}/invite")
+    reissue = api.post(f"/api/v1/members/{me['id']}/invite")
     assert reissue.status == 403, reissue.status
 
 
