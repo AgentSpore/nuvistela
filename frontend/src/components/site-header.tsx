@@ -3,6 +3,7 @@ import { AppNav } from "@/components/app-nav";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { Link } from "@/i18n/navigation";
 import { focusRing } from "@/components/styles";
+import { BRAND } from "@/lib/config";
 import { BeeMark } from "@/components/ui/icons";
 
 export function SiteHeader() {
@@ -23,7 +24,7 @@ export function SiteHeader() {
             className={`inline-flex min-h-11 items-center gap-2 rounded-lg pr-1 font-display text-xl font-bold tracking-tight ${focusRing}`}
           >
             <BeeMark />
-            <span className="hidden min-[420px]:inline">Bumbli</span>
+            <span className="hidden min-[420px]:inline">{BRAND}</span>
           </Link>
           <AppNav />
         </div>

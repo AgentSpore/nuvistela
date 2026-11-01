@@ -4,34 +4,47 @@
     "description": "A family game where real chores unlock chapters of your shared story."
   },
   "landing": {
-    "title": "Bumbli",
-    "pitch": "A family game where real chores unlock chapters of your shared story.",
-    "eyebrow": "A game for the whole family",
-    "cta": "Create a family",
-    "ctaPlay": "Continue playing",
-    "trust": "No passwords, no email: everyone signs in with a personal link.",
+    "eyebrow": "Opening soon · waitlist",
+    "title": "Your family are the heroes of their own fairy tale",
+    "pitch": "Household chores become quests, and every confirmed deed opens a story chapter with a picture of the same heroes.",
+    "cta": "Join the waitlist",
+    "ctaTry": "Create a family",
+    "trust": "We only need a grown-up's email. We collect no data about children.",
     "stepsLabel": "How it works",
     "steps": [
       {
-        "t": "Gather your family",
-        "d": "Name the family and add everyone, from toddlers to grandparents. Each person gets a personal link."
+        "t": "Create your family's world",
+        "d": "Tell us who is in the family and what each person loves. The heroes and the fairy-tale world are drawn for you."
       },
       {
-        "t": "Talk to the game master",
-        "d": "The game master runs your shared story and sets quests that suit each person's age."
+        "t": "Chores become quests",
+        "d": "Tidying up, a walk, homework: the game master turns ordinary chores into quests that suit each age."
       },
       {
-        "t": "Unlock chapters",
-        "d": "Real chores like tidying up or a walk move the plot forward and grow your heroes' skills."
+        "t": "A deed opens a chapter",
+        "d": "A grown-up confirms the deed, and a new chapter appears with a picture of the same heroes."
       }
     ],
-    "peek": {
-      "gm": "Night falls over Quiet Hills. Something rustles in the barn. Who looks inside first?",
-      "kid": "Me! I will just grab a flashlight first.",
-      "quest": "Quest of the day: help Grandma sort the pantry",
-      "kidName": "Mia",
-      "gmName": "Game master"
-    }
+    "gallery": {
+      "label": "Example fairy-tale worlds",
+      "note": "Fictional families. The pictures are AI-drawn; in your story the heroes are you.",
+      "poster": "A video showing how it works will appear here soon",
+      "items": [
+        {
+          "alt": "A family walking through a fairy-tale village under a rainbow"
+        },
+        {
+          "alt": "A sailing ship among islands on the backs of turtles"
+        },
+        {
+          "alt": "A pirate family on the beach with a magic pearl shell"
+        },
+        {
+          "alt": "A family on a ship's deck at sunset"
+        }
+      ]
+    },
+    "privacy": "No third-party trackers. Children's data is never used for ads."
   },
   "locale": {
     "label": "Language",
@@ -185,5 +198,35 @@
     "create": "Create a family",
     "invalidTitle": "This link does not open",
     "failedTitle": "Could not sign you in"
+  },
+  "waitlist": {
+    "title": "Be the first to know",
+    "lead": "We will write once, when we open for families.",
+    "email": "Grown-up's email",
+    "emailHint": "Only for the launch email",
+    "size": "Family size",
+    "sizeOption": "{n}",
+    "ages": "Kids' ages",
+    "agesHint": "Pick any or skip",
+    "bands": {
+      "3-5": "3–5 years",
+      "6-9": "6–9 years",
+      "10-13": "10–13 years",
+      "14-17": "14–17 years"
+    },
+    "submit": "Join the waitlist",
+    "sending": "Sending…",
+    "invalidEmail": "Check the address: it should look like name@example.com",
+    "ok": {
+      "title": "You are on the list",
+      "body": "Thank you! We will send one email when we open."
+    },
+    "err": {
+      "duplicate": "This email is already on the list. No need to sign up again.",
+      "invalid": "We could not accept this. Check the email and the family size.",
+      "limit": "Too many attempts. Wait a minute and try again.",
+      "offline": "You appear to be offline. Check your connection and try again.",
+      "generic": "Something went wrong on our side. Please try again later."
+    }
   }
 }

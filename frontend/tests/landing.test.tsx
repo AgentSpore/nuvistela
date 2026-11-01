@@ -9,17 +9,15 @@ const cases = [
   {
     locale: "ru",
     messages: ru,
-    pitch: "Семейная игра: настоящие дела открывают главы общей истории.",
   },
   {
     locale: "en",
     messages: en,
-    pitch: "A family game where real chores unlock chapters of your shared story.",
   },
 ];
 
 describe("Landing", () => {
-  it.each(cases)("renders title and pitch for $locale", ({ locale, messages, pitch }) => {
+  it.each(cases)("renders title and pitch for $locale", ({ locale, messages }) => {
     render(
       <NextIntlClientProvider locale={locale} messages={messages}>
         <Landing />
@@ -28,6 +26,6 @@ describe("Landing", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: messages.landing.title }),
     ).toBeInTheDocument();
-    expect(screen.getByText(pitch)).toBeInTheDocument();
+    expect(screen.getByText(messages.landing.pitch)).toBeInTheDocument();
   });
 });

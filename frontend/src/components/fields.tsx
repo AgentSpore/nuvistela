@@ -8,6 +8,8 @@ type TextProps = FieldProps & {
   value: string;
   onChange: (v: string) => void;
   maxLength?: number;
+  type?: "text" | "email";
+  autoComplete?: string;
 };
 type SelectProps = FieldProps & {
   value: string;
@@ -45,11 +47,20 @@ function Wrap({
   );
 }
 
-export function TextField({ value, onChange, maxLength, ...f }: TextProps) {
+export function TextField({
+  value,
+  onChange,
+  maxLength,
+  type = "text",
+  autoComplete,
+  ...f
+}: TextProps) {
   return (
     <Wrap {...f}>
       <input
         id={f.id}
+        type={type}
+        autoComplete={autoComplete}
         value={value}
         maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
