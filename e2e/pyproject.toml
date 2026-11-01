@@ -1,0 +1,32 @@
+[project]
+name = "bumbli-e2e"
+version = "0.1.0"
+description = "Browser end-to-end suite: real Next.js build, real FastAPI backend, real Postgres, test-model agent."
+requires-python = ">=3.12"
+dependencies = [
+    "asyncpg>=0.32.0",
+    "httpx>=0.28.1",
+    "playwright==1.58.0",
+    "pytest>=9.2.0",
+    "testcontainers[postgres]>=4.15.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-p no:cacheprovider -p harness"
+
+[tool.ty.environment]
+extra-paths = ["../backend"]
+
+[tool.ty.src]
+# launcher.py runs in the backend venv, the rest here: ty takes one interpreter per run,
+# so the launcher is checked separately (see README).
+exclude = ["launcher.py"]
+
+[[tool.ty.overrides]]
+# the launcher ignores an import that only the backend venv has; that run sees it as unused
+include = ["launcher.py"]
+
+[tool.ty.overrides.rules]
+unused-ignore-comment = "ignore"
