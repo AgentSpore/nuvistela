@@ -1,12 +1,34 @@
-# Bumbli
+# Nuvistela
 
-A family story game: real chores, confirmed by another family member, unlock chapters of a shared story.
+A real-life adventure: complete a small activity and unlock the next chapter of an AI-assisted story, on your own or with people you care about.
 
-## Why "Bumbli"
+**Status: concept validation / early prototype · 2026-11-06.** Maintained by AgentSpore. Review by 2026-12-06.
 
-Bumbli comes from *bumblebee* and *to bumble* (to potter about, busy and a little clumsy). A family is like a hive: everyone brings their own drop, and the shared honey becomes chapters of the family's story. Bumbli the bumblebee is the narrator who writes those chapters and sums up the week.
+## The idea in one example
 
-По-русски: Bumbli — «маленький шмель». Семья как улей: каждый вносит свою каплю, общий мёд превращается в главы истории, а шмель Бамбли её рассказывает.
+A fox wants to reach a library. You build a tower with real blocks and mark the activity complete. In the story, the blocks become a path. The fox finds a book; a bird flies out. Your next activity is to draw a friend for that bird.
+
+The intended reward is a personal story that gives you a reason to do something creative away from the screen. This is the proposed experience, not a claim that every step is implemented.
+
+## What is available today
+
+This repository contains the earlier **Bumbli** family-oriented prototype: chore confirmation, shared story mechanics, world-generation integration, Telegram integration, and a landing page with a waitlist. Existing source names and interface copy still use Bumbli.
+
+The Nuvistela name, solo mode, and the complete activity-to-personalized-chapter experience shown in the concept video are product direction. The video uses mockups; it is not a recording of a released application. This publication is not a production-readiness certification. Local work in progress is not included.
+
+## Give feedback
+
+[Open an issue](https://github.com/AgentSpore/nuvistela/issues/new) and tell us:
+
+- What do you think you would actually do in this product?
+- Would you use it alone or with someone? Give one real situation.
+- What would make you return for a second chapter, or stop after the first?
+
+Please do not post names, photos of children, emails, or other private information. No live public service or waitlist is advertised yet.
+
+## Development
+
+The setup notes below describe the existing Bumbli prototype and are retained from its source repository. They have not been revalidated as part of this documentation-only publication.
 
 ## Run
 
