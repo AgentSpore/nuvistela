@@ -1,6 +1,6 @@
 # Contributing to Nuvistela
 
-Nuvistela (called Bumbli in the README) is a family story game: real chores, confirmed by another family member, unlock chapters of a shared story.
+Nuvistela (called Bumbli in the README) is a story game: real-life activities unlock chapters of your own story; play solo, with a child or as a family.
 
 Everything helps: ideas, feedback, discussions, bug reports and code.
 
