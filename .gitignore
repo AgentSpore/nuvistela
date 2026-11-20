@@ -5,6 +5,3 @@ node_modules/
 __pycache__/
 .next/
 e2e/artifacts/
-
-.claude/
-.agents/

@@ -1,6 +1,8 @@
 import json
+from pathlib import Path
 from unittest.mock import AsyncMock
 
+import asyncpg
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -9,9 +11,15 @@ from app.cli.funnel import format_report
 from app.domain.funnel import EventKind, FunnelStep
 from app.repositories.funnel_repository import FunnelRepository
 from app.services.funnel_service import FunnelService
+from app.services.pilot_service import PilotService
 
 WAITLIST = {"email": "Mama@Example.com", "family_size": 4, "kids_age_bands": ["3-5", "6-9"]}
-FAMILY = {"title": "Secret Clan", "display_name": "Mama Zoya", "locale": "ru"}
+FAMILY = {
+    "title": "Secret Clan",
+    "display_name": "Mama Zoya",
+    "locale": "ru",
+    "privacy_consent": True,
+}
 
 
 async def _kinds(db_fetch, kind: str) -> list:
@@ -143,7 +151,7 @@ def test_cli_format_report_shows_counts_and_conversion():
 
 
 async def test_record_event_refuses_personal_props():
-    service = FunnelService(AsyncMock(spec=FunnelRepository))
+    service = FunnelService(AsyncMock(spec=FunnelRepository), AsyncMock(spec=PilotService))
     with pytest.raises(ValueError):
         await service.record_event(EventKind.QUEST_CREATED, props={"email": "x@y.zz"})
 
@@ -173,3 +181,65 @@ async def test_report_returns_count_families_of_the_window_cohort(
     await engine.dispose()
     assert after[EventKind.RETURN_D1].count == before[EventKind.RETURN_D1].count + 1
     assert (after[EventKind.RETURN_D1].conversion or 0) <= 1
+
+
+@pytest.mark.parametrize("locale", ["ru", "en", "es", "zh-CN"])
+async def test_public_locales_store_signup_and_landing_event(client, db_fetch, locale):
+    payload = {**WAITLIST, "email": f"locale-{locale.lower()}@example.com", "locale": locale}
+    first = await client.post("/api/v1/waitlist", json=payload)
+    repeat = await client.post("/api/v1/waitlist", json=payload)
+    assert first.status_code == repeat.status_code == 200
+    assert first.json() == repeat.json() == {"ok": True}
+    rows = await db_fetch("SELECT locale FROM waitlist WHERE email = $1", payload["email"])
+    assert [row["locale"] for row in rows] == [locale]
+    before = await db_fetch("SELECT count(*) FROM events WHERE kind = 'landing_view'")
+    response = await client.post("/api/v1/events", json={"kind": "landing_view", "locale": locale})
+    assert response.status_code == 204
+    after = await db_fetch("SELECT count(*) FROM events WHERE kind = 'landing_view'")
+    assert after[0]["count"] == before[0]["count"] + 1
+    events = await db_fetch(
+        "SELECT count(*) FROM events WHERE kind = 'landing_view' AND props->>'locale' = $1",
+        locale,
+    )
+    assert events[0]["count"] > 0
+
+
+@pytest.mark.parametrize("locale", ["fr", "zh_CN", "ES"])
+async def test_unsupported_public_locales_rejected_by_api_and_database(client, db_fetch, locale):
+    assert (
+        await client.post("/api/v1/waitlist", json={**WAITLIST, "locale": locale})
+    ).status_code == 422
+    response = await client.post("/api/v1/events", json={"kind": "landing_view", "locale": locale})
+    assert response.status_code == 422
+    with pytest.raises(asyncpg.CheckViolationError) as rejected:
+        await db_fetch(
+            "INSERT INTO waitlist (email, family_size, locale) VALUES ($1, 2, $2)",
+            f"invalid-{locale.lower()}@example.com",
+            locale,
+        )
+    assert getattr(rejected.value, "constraint_name", None) == "waitlist_locale_check"
+
+
+async def test_waitlist_locale_upgrade_preserves_rows_and_is_repeatable(postgres_url):
+    migrations = Path(__file__).resolve().parents[2] / "db" / "migrations"
+    baseline = (migrations / "V5__funnel.sql").read_text().split(");", 1)[0] + ");"
+    assert "CREATE TABLE waitlist" in baseline
+    connection = await asyncpg.connect(postgres_url.replace("+asyncpg", ""))
+    try:
+        await connection.execute(
+            baseline.replace("CREATE TABLE waitlist", "CREATE TEMP TABLE waitlist")
+        )
+        insert = "INSERT INTO waitlist (email, family_size, locale) VALUES ($1, 2, $2)"
+        for locale in ("ru", "en"):
+            await connection.execute(insert, f"upgrade-{locale}@example.com", locale)
+        with pytest.raises(asyncpg.CheckViolationError):
+            await connection.execute(insert, "upgrade-es@example.com", "es")
+        migration = (migrations / "V6__waitlist_landing_locales.sql").read_text()
+        await connection.execute(migration)
+        for locale in ("es", "zh-CN"):
+            await connection.execute(insert, f"upgrade-{locale.lower()}@example.com", locale)
+        await connection.execute(migration)
+        rows = await connection.fetch("SELECT locale FROM waitlist ORDER BY locale")
+        assert [row["locale"] for row in rows] == ["en", "es", "ru", "zh-CN"]
+    finally:
+        await connection.close()

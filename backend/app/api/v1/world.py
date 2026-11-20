@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from app.api.v1.deps import CurrentMember, WorldServiceDep
+from app.api.v1.deps import CurrentMember, WorldSceneRepositoryDep, WorldServiceDep
 from app.schemas.world import WorldRequest, WorldResponse
 from app.services.world_service import WorldForm
 
@@ -25,6 +25,15 @@ async def regenerate_world(
 
 @router.get("/families/{family_id}/world")
 async def get_world(
-    family_id: UUID, actor: CurrentMember, service: WorldServiceDep
+    family_id: UUID,
+    actor: CurrentMember,
+    service: WorldServiceDep,
+    scenes: WorldSceneRepositoryDep,
 ) -> WorldResponse:
-    return WorldResponse.of(await service.get(actor, family_id))
+    stored = await service.get(actor, family_id)
+    return WorldResponse.of(
+        stored,
+        await service.cover(family_id),
+        await scenes.current_state(family_id),
+        await service.cover_growing(family_id),
+    )

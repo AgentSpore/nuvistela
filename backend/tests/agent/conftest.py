@@ -35,6 +35,19 @@ class MemoryConversations:
         self.data.setdefault(event.family_id, []).extend(messages)
 
 
+class AllowAllSpend:
+    """Stand-in for the money gate in tests that are not about money (see test_chat_money.py)."""
+
+    def worst_case(self, request) -> int:
+        return 0
+
+    async def reserve(self, attempt: int, micro: int) -> bool:
+        return True
+
+    async def settle(self, attempt: int, usage) -> None:
+        return None
+
+
 @pytest.fixture
 def conversations() -> MemoryConversations:
     return MemoryConversations()
@@ -61,7 +74,7 @@ def make_settings():
 
 @pytest.fixture
 def deps_factory(families: StubFamilies):
-    return lambda family_id: GameDeps(family_id=family_id, families=families)
+    return lambda family_id: GameDeps(family_id=family_id, families=families, spend=AllowAllSpend())
 
 
 @pytest.fixture

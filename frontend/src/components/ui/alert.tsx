@@ -15,14 +15,20 @@ const TONE: Record<Tone, { box: string; icon: ReactNode }> = {
   ok: { box: "border-ok/40 bg-ok-soft text-ink [&_svg]:text-ok", icon: <CheckIcon /> },
 };
 
-type Props = { tone?: Tone; title?: string; children?: ReactNode; action?: ReactNode };
+type Props = {
+  tone?: Tone;
+  title?: string;
+  children?: ReactNode;
+  action?: ReactNode;
+  live?: boolean;
+};
 
 /** Inline notice. Danger interrupts screen readers (alert), the rest wait politely (status). */
-export function Alert({ tone = "danger", title, children, action }: Props) {
+export function Alert({ tone = "danger", title, children, action, live = true }: Props) {
   const t = TONE[tone];
   return (
     <div
-      role={tone === "danger" ? "alert" : "status"}
+      role={live ? (tone === "danger" ? "alert" : "status") : undefined}
       className={`rise flex gap-3 rounded-2xl border px-4 py-3.5 ${t.box}`}
     >
       <span className="mt-0.5 shrink-0">{t.icon}</span>

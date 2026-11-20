@@ -2,12 +2,20 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.agent.errors import AgentBudgetExceededError, AgentBusyError, AgentUnavailableError
-from app.domain.errors import Forbidden, NotFound, RateLimited, Unauthorized
+from app.domain.errors import (
+    AdmissionRefused,
+    Conflict,
+    Forbidden,
+    NotFound,
+    RateLimited,
+    Unauthorized,
+)
 
 _STATUS: dict[type[Exception], int] = {
     Unauthorized: 401,
     Forbidden: 403,
     NotFound: 404,
+    Conflict: 409,
     RateLimited: 429,
 }
 # Agent failures carry provider text; the client gets a fixed message instead.
@@ -30,9 +38,15 @@ async def _agent_error(_: Request, exc: Exception) -> JSONResponse:
     return JSONResponse({"detail": detail}, status_code=status)
 
 
+async def _admission_error(_: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, AdmissionRefused)
+    return JSONResponse({"detail": {"code": exc.code}}, status_code=429)
+
+
 def register_error_handlers(app: FastAPI) -> None:
     """Map domain and agent errors to HTTP statuses."""
     for exc_type in _STATUS:
         app.add_exception_handler(exc_type, _domain_error)
+    app.add_exception_handler(AdmissionRefused, _admission_error)
     for exc_type in _AGENT:
         app.add_exception_handler(exc_type, _agent_error)

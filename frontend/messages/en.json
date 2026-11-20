@@ -1,34 +1,35 @@
 {
   "meta": {
-    "title": "Bumbli: a family game",
-    "description": "A family game where real chores unlock chapters of your shared story."
+    "title": "Nuvistela: a real-life adventure",
+    "description": "Complete a small real-life activity and unlock the next chapter of an AI-assisted story, on your own or with people you care about.",
+    "ogTitle": "Nuvistela: a family adventure game · free",
+    "ogDescription": "Real-life deeds unlock chapters of your own story. No sign-up, no email: start playing in a minute, solo or with the whole family.",
+    "ogImageAlt": "Colourful artwork: a family on a rainbow path through the fairy-tale world of Nuvistela"
   },
   "landing": {
-    "eyebrow": "Opening soon · waitlist",
-    "title": "Your family are the heroes of their own fairy tale",
-    "pitch": "Household chores become quests, and every confirmed deed opens a story chapter with a picture of the same heroes.",
-    "cta": "Join the waitlist",
-    "ctaTry": "Create a family",
-    "trust": "We only need a grown-up's email. We collect no data about children.",
+    "eyebrow": "A family adventure game · free",
+    "title": "A story starring you, where real-life deeds unlock each chapter",
+    "pitch": "Tidy a room, take a walk, finish a book — an AI storyteller continues a story about you. Solo or with your family.",
+    "ctaTry": "Start a game",
+    "trust": "No email or account needed: a game title, your name and a couple of interests are enough.",
     "stepsLabel": "How it works",
     "steps": [
       {
-        "t": "Create your family's world",
-        "d": "Tell us who is in the family and what each person loves. The heroes and the fairy-tale world are drawn for you."
+        "t": "Create your world",
+        "d": "On your own or with people you care about: say who is taking part and what each person loves. The heroes and the story world are drawn for you."
       },
       {
-        "t": "Chores become quests",
-        "d": "Tidying up, a walk, homework: the game master turns ordinary chores into quests that suit each age."
+        "t": "Pick an activity",
+        "d": "Tidying up, a walk, a hobby: the game master suggests a small real-life activity that suits you, and each age if children take part."
       },
       {
-        "t": "A deed opens a chapter",
-        "d": "A grown-up confirms the deed, and a new chapter appears with a picture of the same heroes."
+        "t": "Mark it done, get the next chapter",
+        "d": "On your own, you mark it yourself; together, someone else can confirm. The story continues with a new chapter and a next activity."
       }
     ],
     "gallery": {
       "label": "Example fairy-tale worlds",
       "note": "Fictional families. The pictures are AI-drawn; in your story the heroes are you.",
-      "poster": "A video showing how it works will appear here soon",
       "items": [
         {
           "alt": "A family walking through a fairy-tale village under a rainbow"
@@ -44,26 +45,63 @@
         }
       ]
     },
-    "privacy": "No third-party trackers. Children's data is never used for ads."
+    "privacy": "No third-party trackers. Children's data is never used for ads.",
+    "languageScope": "The game is in Russian, English, Spanish and Chinese",
+    "demoCta": "Try the example",
+    "demo": {
+      "badge": "DEMO · READY-MADE EXAMPLE",
+      "title": "One deed, a new chapter",
+      "disclosure": "Choose who you want to try this for. This is a sample walkthrough: no account, real task or personalized story generation.",
+      "intentLabel": "Who is the story for?",
+      "solo": "For myself",
+      "family": "For my family",
+      "start": "Open a sample quest",
+      "soloQuest": "Example: clear your desk for something you enjoy. In this demo, just press the button below; you do not need to do the task now.",
+      "familyQuest": "Example: put scattered blocks away together. In this demo, just press the button below; no adult confirmation is needed.",
+      "complete": "Show the sample chapter",
+      "chapterTitle": "The path is open again",
+      "soloChapter": "The clearing had room to breathe again. A traveler spotted a sparkling path and took the first step into a new story.",
+      "familyChapter": "The blocks were back in place, and a path lit up across the valley. The heroes continued their journey together.",
+      "sampleNote": "The text and picture were prepared in advance. These are fictional characters, not you or your family. A real game chapter will relate to a completed deed; this is only an example.",
+      "imageAlt": "Ready-made illustration of fictional characters beside a rainbow path",
+      "signup": "Start a game",
+      "share": "Share the example link",
+      "publicLink": "Public example link",
+      "shareStatus": {
+        "closed": "The share window closed. We do not know whether the link was sent or received.",
+        "cancelled": "Sharing cancelled. You can continue without sending a link.",
+        "copied": "Public link copied. You choose who to send it to.",
+        "failed": "Could not open sharing or copy the link. You can select and copy it below."
+      }
+    }
   },
   "locale": {
     "label": "Language",
     "ru": "Русский",
-    "en": "English"
+    "en": "English",
+    "es": "Español",
+    "zh-CN": "简体中文"
+  },
+  "common": {
+    "labelValue": "{label}: {value}",
+    "labelValueStyled": "{label}: <v>{value}</v>",
+    "pair": "{first}, {second}"
   },
   "nav": {
     "label": "Sections",
-    "new": "New family",
+    "new": "New game",
     "play": "Play",
-    "family": "Family",
-    "home": "Bumbli, home",
-    "skip": "Skip to content"
+    "family": "Players",
+    "home": "Nuvistela, home",
+    "more": "More",
+    "skip": "Skip to content",
+    "adventure": "Adventure"
   },
   "gate": {
     "loading": "Loading…",
     "error": "Could not load data. Try refreshing the page.",
-    "anonymous": "You are not signed in yet. Open your invite link or create a family.",
-    "create": "Create a family",
+    "anonymous": "You are not signed in yet. Open your invite link or start a game.",
+    "create": "Start a game",
     "errorTitle": "Could not load",
     "retry": "Try again",
     "anonymousTitle": "Sign in first"
@@ -75,6 +113,8 @@
     "tooMany": "At most 10 interests",
     "roleMismatch": "The adult role only fits the adult age band",
     "network": "Cannot reach the server. Check your connection and try again.",
+    "rateLimited": "Too many attempts, please try again in an hour",
+    "dailyFull": "All the seats are taken today — come back tomorrow",
     "unauthorized": "Sign in with your invite link first.",
     "forbidden": "Only adults can do this.",
     "generic": "Something went wrong. Please try again."
@@ -84,13 +124,15 @@
     "copy": "Copy",
     "copied": "Copied",
     "copyFailed": "Could not copy, select the link manually",
-    "expiresNote": "The link works once."
+    "expiresNote": "The link works once.",
+    "share": "Share",
+    "once": "Each link is shown only once. Lost one? Open Players and tap New link: the old link will stop working.",
+    "onceShort": "Each link is shown only once."
   },
   "member": {
-    "heading": "Add a member",
+    "heading": "Add a player",
     "name": "Name",
     "band": "Age",
-    "role": "Role",
     "interests": "Interests",
     "interestsHint": "Comma-separated, up to 10",
     "submit": "Add",
@@ -107,25 +149,30 @@
     }
   },
   "new": {
-    "heading": "Create your family",
-    "title": "Family name",
+    "heading": "Who is playing?",
+    "title": "Name your game",
     "name": "Your name",
-    "interests": "Family interests",
+    "interests": "Interests",
     "interestsHint": "Comma-separated, up to 10",
-    "submit": "Create family",
+    "submit": "Continue",
     "linksHeading": "Sign-in links",
     "linksHint": "Send everyone their own link. Opening it signs them into the game. Each link is personal, do not share it.",
-    "intro": "A family name, your name and a couple of interests: the game master will build a story around you.",
-    "step1": "Family",
+    "intro": "A name for your game, your name and a couple of interests: the game master will build a story around you.",
+    "step1": "Players",
     "step2": "Links",
+    "step2Solo": "Done",
     "stepsLabel": "Steps",
-    "createdHeading": "Family created",
+    "createdHeading": "Game ready",
     "play": "Go to the game",
-    "addMore": "Add everyone else while they are around. You can also do it later on the Family page."
+    "addMore": "Playing with others? Add them while they are around. You can also do it later on the Players page.",
+    "addMember": "Add a player",
+    "addAnother": "Add another player",
+    "linkReady": "Link ready: {name}",
+    "consent": "I am a parent or legal guardian of the children I will add, and I accept the <policy>privacy policy</policy>"
   },
   "play": {
     "title": "Play",
-    "members": "Family",
+    "members": "Players",
     "chat": "Chat with the game master",
     "empty": "Write the game master your first message.",
     "input": "Message to the game master",
@@ -135,7 +182,7 @@
       "soon": "The game master is coming soon. Nobody has read your message yet.",
       "failed": "Could not send the message. Please try again.",
       "busy": "The game master is still replying. Give them a moment, then keep writing.",
-      "limit": "Your family has used today's limit. Come back tomorrow, the game master will be waiting.",
+      "limit": "Today's limit is used up. Come back tomorrow, the game master will be waiting.",
       "unavailable": "The game master is unavailable right now, and it is not your fault. Try again in a few minutes.",
       "textTooLong": "The message is too long. Please shorten it.",
       "network": "Cannot reach the server. Check your connection and try again.",
@@ -144,7 +191,7 @@
     },
     "you": "You",
     "agent": "Game master",
-    "emptyHint": "For example: “Hello! We are ready to start”.",
+    "emptyHint": "In your own words, or with one tap:",
     "typing": "The game master is typing…",
     "hint": "Enter sends, Shift+Enter adds a new line.",
     "counter": "{count} of {max}",
@@ -160,10 +207,16 @@
       "unauthorized": "Sign-in needed",
       "forbidden": "Not allowed"
     },
-    "restored": "Your text is back in the box."
+    "restored": "Your text is back in the box.",
+    "startersLabel": "Ready-made questions",
+    "starter": {
+      "today": "What’s waiting for us today?",
+      "world": "Tell us about our world",
+      "riddle": "Make up a riddle"
+    }
   },
   "family": {
-    "title": "Family",
+    "title": "Players",
     "reissue": "New link",
     "reissued": "The previous link no longer works and signs this member out everywhere. Send them the new one.",
     "reissueFor": "New link for {name}",
@@ -171,16 +224,16 @@
     "owner": "Owner",
     "you": "You",
     "empty": "Nobody here yet.",
-    "loadFailed": "Could not load the family list.",
+    "loadFailed": "Could not load the list of players.",
     "retry": "Try again",
     "invitesHeading": "New links",
     "telegram": {
       "heading": "Connect Telegram",
-      "intro": "Link your family chat and the game master will answer there too.",
+      "intro": "Link your chat and the game master will answer there too.",
       "get": "Get a code",
       "again": "Get a new code",
       "codeLabel": "Code",
-      "step": "Add the bot to your family chat and send this command:",
+      "step": "Add the bot to your chat and send this command:",
       "copyCommand": "Copy command",
       "copiedCommand": "Command copied",
       "expires": "The code works until {time}.",
@@ -188,45 +241,266 @@
       "privateHint": "In a private chat with the bot, “/link code” is enough.",
       "copyFailed": "Could not copy, select the command by hand",
       "addToGroup": "Add the bot to a group",
-      "notConnected": "Telegram is currently unavailable for Bumbli. Try again later."
+      "notConnected": "Telegram is currently unavailable for Nuvistela. Try again later."
     }
   },
   "join": {
     "working": "Signing you in…",
     "invalid": "This link is invalid or already used. Ask an adult for a new one.",
     "failed": "Could not sign you in. Check your connection and open the link again.",
-    "create": "Create a family",
+    "create": "Start a game",
     "invalidTitle": "This link does not open",
-    "failedTitle": "Could not sign you in"
+    "failedTitle": "Could not sign you in",
+    "consent": "By continuing, you accept the <policy>privacy policy</policy>."
   },
-  "waitlist": {
-    "title": "Be the first to know",
-    "lead": "We will write once, when we open for families.",
-    "email": "Grown-up's email",
-    "emailHint": "Only for the launch email",
-    "size": "Family size",
-    "sizeOption": "{n}",
-    "ages": "Kids' ages",
-    "agesHint": "Pick any or skip",
-    "bands": {
-      "3-5": "3–5 years",
-      "6-9": "6–9 years",
-      "10-13": "10–13 years",
-      "14-17": "14–17 years"
+  "adventure": {
+    "title": "Adventure",
+    "startTitle": "Make up your own world",
+    "startHint": "Your adventure will take place in this world. The world is chosen once.",
+    "genre": {
+      "fairy_tale": "Fairy tale",
+      "space": "Space",
+      "pirates": "Pirates",
+      "custom": "Your own world"
     },
-    "submit": "Join the waitlist",
+    "customLabel": "Describe your world",
+    "customHint": "Where it happens, the mood, who is around. The more detail, the closer the world is to your idea.",
+    "start": "Start",
+    "starting": "Starting…",
+    "questTitle": "Your quest",
+    "skill": "Learning",
+    "done": "Done!",
+    "sheetTitle": "Is the quest done?",
+    "noteLabel": "Note (optional)",
+    "noteHint": "What worked out? It goes into the story.",
+    "counter": "{count} of {max}",
+    "send": "Send check-in",
     "sending": "Sending…",
-    "invalidEmail": "Check the address: it should look like name@example.com",
-    "ok": {
-      "title": "You are on the list",
-      "body": "Thank you! We will send one email when we open."
+    "cancel": "Close",
+    "reward": {
+      "reaction": "The world responds",
+      "done": "{title} — done",
+      "writing": "Writing your chapter…"
     },
-    "err": {
-      "duplicate": "This email is already on the list. No need to sign up again.",
-      "invalid": "We could not accept this. Check the email and the family size.",
-      "limit": "Too many attempts. Wait a minute and try again.",
-      "offline": "You appear to be offline. Check your connection and try again.",
-      "generic": "Something went wrong on our side. Please try again later."
+    "waitingQuest": "The next quest arrives with the new chapter.",
+    "paused": "Updates paused, trying again.",
+    "storyTitle": "Your story",
+    "storyEmpty": "The first chapter appears once you finish the quest.",
+    "chapter": {
+      "label": "Chapter {seq}",
+      "queued": {
+        "title": "The chapter is waiting its turn",
+        "text": "The storyteller will start soon. You can close the page: the story is saved."
+      },
+      "writing": {
+        "title": "The storyteller is writing",
+        "text": "The page updates by itself."
+      },
+      "delayed_model": {
+        "title": "The storyteller is not available right now",
+        "text": "Your check-in is saved and we will try again a little later. The game goes on: you can take a new quest."
+      },
+      "delayed_budget": {
+        "title": "Today's story limit is used up",
+        "text": "Your check-in is saved and we will try again a little later. The game goes on: you can take a new quest."
+      },
+      "slow": "This chapter is taking longer than usual. The page will update by itself. You can close the page: nothing will be lost."
+    },
+    "retry": "Try again",
+    "note": {
+      "limit": "Many retries were used today. We will try again a little later.",
+      "conflict": "This chapter is already in progress. The page was refreshed.",
+      "failed": "Could not send. Nothing is lost: please try again.",
+      "forbidden": "Only a grown-up can do this."
+    },
+    "loadFailed": "Could not load the adventure",
+    "world": {
+      "heading": "Your world",
+      "waitingTitle": "The world is being written",
+      "waitingText": "The storyteller is inventing places and heroes. The page updates by itself. You can close it: the world is saved.",
+      "waitingYourWorld": "Your world",
+      "waitingSteps": {
+        "places": "Inventing the places",
+        "heroes": "Choosing the heroes",
+        "quest": "Preparing the first quest"
+      },
+      "hero": "Your hero",
+      "trait": "Trait",
+      "skill": "Superpower",
+      "coverAlt": "Cover picture of the world “{title}”",
+      "coverDrawing": "Drawing your world…",
+      "coverTomorrow": "We'll finish the picture later — the game is on",
+      "coverGrown": "The world has grown",
+      "coverGrowing": "The world is changing…",
+      "about": "About the world",
+      "places": "Places",
+      "chronicle": "World chronicle",
+      "chronicleNew": "New:",
+      "learned": "What we learned",
+      "slow": "The world is taking longer than usual. The page keeps checking by itself.",
+      "loadFailed": "Could not load the world"
+    },
+    "world3d": {
+      "walk": "Walk through the world · {upTo}{mb} MB",
+      "upTo": "up to ",
+      "walkShort": "In 3D",
+      "walkLabel": "Walk through the world in 3D, {upTo}{mb} MB",
+      "close": "Close",
+      "panoAlt": "Panorama of the world",
+      "label": "Walking through the world"
+    },
+    "customTooLong": "The description is longer than {max} characters. Shorten it and we will begin.",
+    "examplesLabel": "Not sure where to start? Tap an example.",
+    "presetsLabel": "or pick a ready-made one",
+    "examples": {
+      "one": "A city on the backs of giant turtles drifting through warm clouds. Fireflies instead of street lamps.",
+      "two": "A forest school for young inventors: lessons on branches and the mystery of the missing rainbow.",
+      "three": "An abandoned station at the edge of the Moon where old robots mend the stars.",
+      "four": "A valley where the wind redraws the map every morning and everyone looks for the way home together."
+    },
+    "waitWorld": "{name} is choosing your world — we’ll begin soon!",
+    "waitWorldAnyone": "A grown-up is choosing your world — we’ll begin soon!",
+    "waitWorldHint": "Your first quest will appear right here on its own, no need to refresh.",
+    "worldTaken": "Another adult has already chosen the world — see what came out. The description you typed was not saved."
+  },
+  "share": {
+    "ogTitle": "Our world: {title}",
+    "ogDescription": "Take a look at our world, then make your own: the story grows from real-life deeds.",
+    "tagline": "Our world, made from real-life deeds and a little imagination.",
+    "counts": "{quests, plural, one {# quest done} other {# quests done}} · {chapters, plural, one {# chapter} other {# chapters}}",
+    "cta": "Create your own world",
+    "unavailableTitle": "Card unavailable",
+    "unavailableText": "This link was turned off or never existed. You can still create a world of your own.",
+    "sheet": {
+      "open": "Share this world",
+      "visibility": "Anyone with the link can see it. You can turn the link off",
+      "create": "Create link",
+      "close": "Close",
+      "linkLabel": "Card link",
+      "status": {
+        "shared": "The share window closed. We do not know whether the link was sent.",
+        "cancelled": "Sharing cancelled. The link is created; you can send it later.",
+        "copied": "Link copied. You choose who to send it to.",
+        "failed": "Could not open sharing or copy the link. Select it below and copy it yourself."
+      },
+      "revoke": "Turn off link",
+      "revokeAsk": "Turn off the link? The card will stop opening for everyone you sent it to.",
+      "revokeYes": "Yes, turn off",
+      "revokeNo": "Keep it",
+      "revoked": "Link turned off. The card no longer opens.",
+      "errors": {
+        "unavailable": "Sharing is not possible right now: the world has no ready picture or sharing is temporarily off.",
+        "limit": "Many links were created today. Try again tomorrow or send the one you already made.",
+        "generic": "That did not work. Check your connection and try again."
+      }
     }
+  },
+  "push": {
+    "question": "Let us know when the next quest is ready?",
+    "yes": "Yes, let me know",
+    "no": "Not now",
+    "heading": "Reminders",
+    "toggle": "Tell me on this device when a new quest is ready",
+    "blocked": "Notifications are turned off in your browser settings.",
+    "failed": "Could not turn reminders on. Please try again later.",
+    "homeScreen": "Add the app to your Home Screen to get notifications",
+    "taken": "Reminders on this device are already on for another family."
+  },
+  "privacy": {
+    "title": "Nuvistela Privacy Policy",
+    "effective": "In effect since 18 November 2026.",
+    "version": "2026-11-18",
+    "versionLabel": "Version",
+    "sections": [
+      {
+        "h": "Who we are",
+        "p": [
+          "Nuvistela is a family game: adults and children complete small tasks at home together, and the story of the world is written from their check-ins. The personal data operator is sole proprietor [operator name] (OGRNIP [OGRNIP], INN [INN], Russia). For questions about your data, write to privacy@example.com."
+        ]
+      },
+      {
+        "h": "What data we keep",
+        "p": [
+          "- The family name and the names or nicknames of the players that you enter. You may give a nickname instead of a real name.",
+          "- The age group of each player (3–5, 6–9, 10–13, 14–17 or adult) and their interests, if you provided them.",
+          "- Your check-ins on completed tasks and your messages in the chat with the game master.",
+          "- The history of the world: the tasks, chapters, covers and 3D scenes created for your family.",
+          "- If you connected Telegram: the chat identifier and the texts the bot receives and sends in that chat.",
+          "- If you turned on notifications: your browser's subscription address and time zone.",
+          "- If you previously submitted a pilot request: your email address, family size, the age groups of the children and language.",
+          "- Usage events (for example, \"task completed\") linked to the family, without names or text; they are erased together with the family.",
+          "- Technical request data (IP address, browser) in web server logs, needed to protect against abuse.",
+          "We do not ask for photographs, addresses, phone numbers or documents, and we do not use children's data for advertising. There are no third-party counters or advertising trackers on the site."
+        ]
+      },
+      {
+        "h": "Why",
+        "p": [
+          "To run your family's game: to devise tasks, write chapters and pictures of the world, remind you about a new task if you want that, and contact you about a pilot request submitted earlier. The basis is your consent, which you give when creating the family, and the performance of the agreement on using the game."
+        ]
+      },
+      {
+        "h": "Children",
+        "p": [
+          "A family is created by an adult. By creating it, the adult confirms that they are the parent or legal representative of the children they add and consents to the processing of their data. A child enters the game only by invitation from this adult."
+        ]
+      },
+      {
+        "h": "Who we share data with",
+        "p": [
+          "The texts of stories and tasks and the pictures are written by artificial intelligence models. We pass them only what is needed for a particular chapter or picture, and we forbid model providers to store the requests or to train on them.",
+          "- **OpenRouter** (USA): access to language and image models. Names are not passed into chapters and descriptions of the world: they are replaced with a label. The game master in the chat sees the family name and the players' names in order to address you. Descriptions for pictures are cleared of names, ages and interests.",
+          "- **World Labs** (USA): 3D scenes of the world. Only the description of the scene is passed, without names; the scene is closed to public access.",
+          "- **Telegram**: if you connected the bot, the messages in your chat.",
+          "- **Browser notification services** (Google, Apple, Mozilla, Microsoft, depending on the browser): the text of the reminder, sent to the subscription address.",
+          "- **HOSTKEY** (Finland, the Netherlands): the servers on which the data is stored.",
+          "Some of these companies are located outside your country of residence. We do not sell data to anyone."
+        ]
+      },
+      {
+        "h": "“Share” links",
+        "p": [
+          "An adult can create a public link to a world card. Anyone who has the link can see it; players' names are not shown on the card. The link can be revoked at any time."
+        ]
+      },
+      {
+        "h": "Cookies and browser storage",
+        "p": [
+          "- `bumbli_session`: signs you in to the family, for up to 365 days.",
+          "- `NEXT_LOCALE`: the language you chose.",
+          "- Browser storage: which world events you have already seen, the world cover, the refusal of notifications, and service keys that prevent one check-in from being sent twice."
+        ]
+      },
+      {
+        "h": "How long we keep it",
+        "p": [
+          "Family data is kept for as long as the family exists. The family owner can delete it in the \"Family\" section: the players, tasks, chapters, pictures, 3D scenes, links, subscriptions and Telegram bindings are deleted. A pilot request submitted earlier will be deleted on request to privacy@example.com. The accounting of model costs retains only amounts, with no link to the family."
+        ]
+      },
+      {
+        "h": "Your rights",
+        "p": [
+          "You can find out what data we keep, correct it, delete the family, withdraw your consent (this means deleting the family) and decline notifications. Write to privacy@example.com and we will reply within 10 working days. You also have the right to apply to the personal data protection authority of your country."
+        ]
+      },
+      {
+        "h": "Changes",
+        "p": [
+          "If the policy changes, a new date and version will appear on this page. We will notify you in the game of any material changes."
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "privacy": "Privacy policy"
+  },
+  "erase": {
+    "button": "Delete the family and all data",
+    "heading": "Delete the family?",
+    "hint": "This cannot be undone: the players, tasks, chapters, pictures, 3D scenes, links, subscriptions and Telegram bindings will be deleted. To confirm, type “{phrase}”.",
+    "label": "Confirmation",
+    "confirm": "Delete forever",
+    "cancel": "Cancel",
+    "fallback": "DELETE"
   }
 }

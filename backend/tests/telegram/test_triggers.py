@@ -81,7 +81,7 @@ async def test_empty_question_gets_hint_and_runs_no_turn(tg, sender, agent) -> N
     with agent.override(model=FunctionModel(rec)):
         await post_update(tg, update(2, "/ask"))
         await post_update(tg, update(3, f"@{BOT.username}"))
-    assert [s.text for s in sender.sent] == ["напиши вопрос после /ask"] * 2
+    assert [s.text for s in sender.sent] == ["Напишите вопрос после /ask."] * 2
     assert rec.seen == []
 
 
@@ -100,7 +100,7 @@ async def test_private_link_needs_no_admin(tg, sender, db_fetch) -> None:
     code = await issue_code(tg, family_id, cookie)
     sender.admins.clear()
     await link(tg, code, 1, chat_id=42)
-    assert sender.sent[-1].text == "connected"
+    assert sender.sent[-1].text == "Чат подключён."
 
 
 async def test_long_reply_is_split_and_only_first_chunk_replies(tg, sender, agent) -> None:
@@ -203,7 +203,7 @@ async def test_link_followed_by_newline_is_handled(tg, sender, db_fetch) -> None
     cookie, family_id = await make_member(tg)
     code = await issue_code(tg, family_id, cookie)
     await post_update(tg, update(1, f"/link@{BOT.username}\n{code}"))
-    assert sender.sent[-1].text == "connected"
+    assert sender.sent[-1].text == "Чат подключён."
 
 
 def units(text: str) -> int:
@@ -232,7 +232,7 @@ async def test_blank_agent_reply_gets_fixed_fallback(tg, sender, agent) -> None:
     await linked(tg, sender)
     with agent.override(model=FunctionModel(Recorder("  "))):
         await post_update(tg, update(2, "/ask hi"))
-    assert [s.text for s in sender.sent] == ["the game master had no answer, try again"]
+    assert [s.text for s in sender.sent] == ["Ведущий не нашёл, что ответить. Попробуйте ещё раз."]
 
 
 async def test_failing_admin_lookup_replies_try_again_and_keeps_the_code(

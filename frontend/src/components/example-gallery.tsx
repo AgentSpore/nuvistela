@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { exampleLoader } from "@/lib/example-loader";
 
 const SHOTS = [
   { file: "village", w: 768, h: 573 },
@@ -31,20 +32,13 @@ export function ExampleGallery() {
               width={s.w}
               height={s.h}
               sizes="(min-width: 640px) 25vw, 50vw"
-              unoptimized
+              loader={exampleLoader}
               loading="lazy"
               className="aspect-square size-full object-cover"
             />
           </li>
         ))}
       </ul>
-      <div
-        role="img"
-        aria-label={t("poster")}
-        className="mt-4 flex aspect-video items-center sm:aspect-[21/9] justify-center rounded-2xl border border-dashed border-line-strong bg-sunken px-6 text-center text-muted"
-      >
-        <span aria-hidden="true">{t("poster")}</span>
-      </div>
     </section>
   );
 }

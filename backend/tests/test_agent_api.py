@@ -40,7 +40,9 @@ class Recorder:
 
 
 async def make_member(client: AsyncClient, title: str = "Smiths") -> tuple[dict, str]:
-    resp = await client.post("/api/v1/families", json={"title": title, "display_name": "Papa"})
+    resp = await client.post(
+        "/api/v1/families", json={"title": title, "display_name": "Papa", "privacy_consent": True}
+    )
     assert resp.status_code == 201
     cookie = {"Cookie": f"bumbli_session={resp.cookies['bumbli_session']}"}
     client.cookies.clear()

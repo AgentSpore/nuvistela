@@ -40,3 +40,15 @@ def test_history_validator_error_does_not_echo_secrets(monkeypatch: pytest.Monke
     with pytest.raises(ValidationError) as exc:
         _settings(agent_history_limit=1)
     assert "sentinel-not-a-real-key" not in str(exc.value)
+
+
+def test_idle_workers_poll_every_half_second_by_default() -> None:
+    assert _settings().world_poll_s == 0.5
+
+
+def test_reminder_window_must_not_be_empty() -> None:
+    with pytest.raises(ValidationError, match="reminder_window"):
+        _settings(reminder_window_start_hour=20, reminder_window_end_hour=17)
+    with pytest.raises(ValidationError, match="reminder_window"):
+        _settings(reminder_window_start_hour=17, reminder_window_end_hour=17)
+    assert _settings(reminder_window_start_hour=17, reminder_window_end_hour=20)

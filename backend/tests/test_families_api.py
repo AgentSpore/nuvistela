@@ -39,7 +39,8 @@ async def _login(client: AsyncClient, invite_url: str) -> dict[str, str]:
 def new_family(client: AsyncClient) -> Callable[[], Awaitable[Person]]:
     async def create() -> Person:
         resp = await client.post(
-            "/api/v1/families", json={"title": "Smiths", "display_name": "Papa"}
+            "/api/v1/families",
+            json={"title": "Smiths", "display_name": "Papa", "privacy_consent": True},
         )
         assert resp.status_code == 201
         body = resp.json()
@@ -65,7 +66,8 @@ def add_child(client: AsyncClient) -> Callable[[Person], Awaitable[Person]]:
 
 async def test_create_family_then_invite_login(client: AsyncClient) -> None:
     created = await client.post(
-        "/api/v1/families", json={"title": "Smiths", "display_name": "Papa"}
+        "/api/v1/families",
+        json={"title": "Smiths", "display_name": "Papa", "privacy_consent": True},
     )
     assert created.status_code == 201
     body = created.json()
@@ -87,14 +89,17 @@ async def test_create_family_then_invite_login(client: AsyncClient) -> None:
 
 async def test_session_cookie_is_secure_when_configured(secure_client: AsyncClient) -> None:
     created = await secure_client.post(
-        "/api/v1/families", json={"title": "Smiths", "display_name": "Papa"}
+        "/api/v1/families",
+        json={"title": "Smiths", "display_name": "Papa", "privacy_consent": True},
     )
     login = await _accept(secure_client, created.json()["invite_url"])
     assert "secure" in login.headers["set-cookie"].lower().split("; ")
 
 
 async def test_creator_has_session_right_after_create(client: AsyncClient) -> None:
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Papa", "privacy_consent": True}
+    )
     set_cookie = created.headers["set-cookie"].lower()
     assert "httponly" in set_cookie
     assert "samesite=lax" in set_cookie
@@ -212,7 +217,9 @@ async def test_reissue_kills_unused_old_invite(
 
 
 async def test_invite_is_single_use(client: AsyncClient) -> None:
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Papa", "privacy_consent": True}
+    )
     url = created.json()["invite_url"]
     assert (await _accept(client, url)).status_code == 200
     assert (await _accept(client, url)).status_code == 401
@@ -245,7 +252,9 @@ def db_exec(postgres_url: str) -> Callable[..., Awaitable[None]]:
 async def test_expired_invite_is_rejected(
     client: AsyncClient, db_exec: Callable[..., Awaitable[None]]
 ) -> None:
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Old"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Old", "privacy_consent": True}
+    )
     await db_exec(
         "UPDATE members SET invite_expires_at = now() - interval '1 minute' WHERE id = $1::uuid",
         created.json()["member"]["id"],
@@ -267,7 +276,9 @@ async def test_expired_session_is_rejected(
 
 
 async def test_cookie_carries_session_not_invite(client: AsyncClient) -> None:
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Papa", "privacy_consent": True}
+    )
     url = created.json()["invite_url"]
     login = await _accept(client, url)
     assert login.headers["referrer-policy"] == "no-referrer"
@@ -305,7 +316,9 @@ async def test_member_validation(
 
 async def test_get_cannot_consume_invite(client: AsyncClient) -> None:
     """A link-preview crawler only issues GET; it must not burn the invite."""
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Papa", "privacy_consent": True}
+    )
     url = created.json()["invite_url"]
     token = _token(url)
     for path in (f"/api/v1/invite/{token}", f"/join/{token}", "/join"):
@@ -318,7 +331,9 @@ async def test_get_cannot_consume_invite(client: AsyncClient) -> None:
 async def test_concurrent_accepts_yield_one_session(
     client: AsyncClient, db_value: Callable[..., Awaitable[Any]]
 ) -> None:
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Race"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Race", "privacy_consent": True}
+    )
     url = created.json()["invite_url"]
     member_id = created.json()["member"]["id"]
     before = await db_value("SELECT count(*) FROM sessions WHERE member_id = $1::uuid", member_id)
@@ -357,7 +372,9 @@ async def test_login_purges_members_expired_sessions(
     db_exec: Callable[..., Awaitable[None]],
     db_value: Callable[..., Awaitable[Any]],
 ) -> None:
-    created = await client.post("/api/v1/families", json={"title": "T", "display_name": "Papa"})
+    created = await client.post(
+        "/api/v1/families", json={"title": "T", "display_name": "Papa", "privacy_consent": True}
+    )
     member_id = created.json()["member"]["id"]
     await db_exec(
         "UPDATE sessions SET expires_at = now() - interval '1 day' WHERE member_id = $1::uuid",
@@ -368,12 +385,16 @@ async def test_login_purges_members_expired_sessions(
     assert rows == 1
 
 
-@pytest.mark.parametrize(("locale", "prefix"), [("ru", "/join#"), ("en", "/en/join#")])
+@pytest.mark.parametrize(
+    ("locale", "prefix"),
+    [("ru", "/join#"), ("en", "/en/join#"), ("es", "/es/join#"), ("zh-CN", "/zh-CN/join#")],
+)
 async def test_invite_url_carries_family_locale_prefix(
     client: AsyncClient, locale: str, prefix: str
 ) -> None:
     created = await client.post(
-        "/api/v1/families", json={"title": "T", "display_name": "Papa", "locale": locale}
+        "/api/v1/families",
+        json={"title": "T", "display_name": "Papa", "locale": locale, "privacy_consent": True},
     )
     assert created.json()["invite_url"].startswith(prefix)
     cookie = await _login(client, created.json()["invite_url"])
@@ -385,3 +406,27 @@ async def test_invite_url_carries_family_locale_prefix(
     child_id = added.json()["member"]["id"]
     again = await client.post(f"/api/v1/members/{child_id}/invite", headers=cookie)
     assert again.json()["invite_url"].startswith(prefix)
+
+
+@pytest.mark.parametrize("locale", ["ru", "en", "es", "zh-CN"])
+async def test_family_is_created_and_stored_in_each_app_locale(
+    client: AsyncClient, db_fetch, locale: str
+) -> None:
+    created = await client.post(
+        "/api/v1/families",
+        json={"title": "T", "display_name": "Papa", "locale": locale, "privacy_consent": True},
+    )
+    assert created.status_code == 201
+    rows = await db_fetch(
+        "SELECT locale FROM families WHERE id = $1::uuid", created.json()["family_id"]
+    )
+    assert [r["locale"] for r in rows] == [locale]
+
+
+@pytest.mark.parametrize("locale", ["fr", "zh", "zh-cn", "ES", ""])
+async def test_unknown_locale_is_rejected(client: AsyncClient, locale: str) -> None:
+    resp = await client.post(
+        "/api/v1/families",
+        json={"title": "T", "display_name": "Papa", "locale": locale, "privacy_consent": True},
+    )
+    assert resp.status_code == 422

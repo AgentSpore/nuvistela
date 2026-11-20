@@ -3,6 +3,9 @@
 from dataclasses import dataclass
 from typing import Protocol
 
+from pydantic_ai.models import ModelRequestContext
+from pydantic_ai.usage import RequestUsage
+
 
 @dataclass(frozen=True, slots=True)
 class FamilyStateView:
@@ -24,6 +27,22 @@ class WorldSummaryReader(Protocol):
     async def summary(self, family_id: str) -> str | None: ...
 
 
+class TurnSpend(Protocol):
+    """The money of one turn: each model request is reserved before it is sent, then settled."""
+
+    def worst_case(self, request: ModelRequestContext) -> int:
+        """Micro-USD this request can cost at most."""
+        ...
+
+    async def reserve(self, attempt: int, micro: int) -> bool:
+        """True only when `micro` fits under both daily caps and the request may be sent."""
+        ...
+
+    async def settle(self, attempt: int, usage: RequestUsage) -> None:
+        """Replace the reservation of request `attempt` with its actual cost."""
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class GameDeps:
     """Per-turn dependencies: the family the event belongs to plus service handles."""
@@ -33,3 +52,4 @@ class GameDeps:
     channel: str = "web"
     kind: str = "message"
     worlds: WorldSummaryReader | None = None
+    spend: TurnSpend | None = None

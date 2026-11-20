@@ -15,6 +15,7 @@ from pydantic_ai.models.function import FunctionModel
 from pydantic_ai.models.test import TestModel
 from pydantic_ai_harness.spend import InMemorySpendStore
 
+from app.agent.chat_spend import chat_price
 from app.agent.errors import AgentBudgetExceededError, AgentConfigError, AgentUnavailableError
 from app.agent.factory import build_game_master
 from app.agent.models import AgentReply
@@ -65,11 +66,13 @@ async def test_request_carries_configured_model_and_zdr_routing(
         return httpx2.Response(200, json=completion("Hello family"))
 
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
-    reply = await runtime(make_settings(), deps_factory, client).run_turn(event)
+    settings = make_settings()
+    reply = await runtime(settings, deps_factory, client).run_turn(event)
     assert reply.text == "Hello family"
     (body,) = seen
     assert body["model"] == "vendor/model-x"
-    assert body["provider"] == {"data_collection": "deny", "zdr": True, "require_parameters": True}
+    assert body["provider"] == chat_price(settings).zdr_routing()  # ZDR plus max_price
+    assert body["max_tokens"] == settings.chat_max_tokens
     assert headers[0]["authorization"] == "Bearer test-key"
     assert "test-key" not in json.dumps(body)  # the key travels only in the header
 

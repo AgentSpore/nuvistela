@@ -4,8 +4,8 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from app.domain.errors import Forbidden, NotFound, Unauthorized
-from app.domain.family import AgeBand, Family, Member, NewMember, Role
+from app.domain.errors import AdmissionRefused, Forbidden, NotFound, Unauthorized
+from app.domain.family import PRIVACY_POLICY_VERSION, AgeBand, Family, Member, NewMember, Role
 from app.domain.funnel import EventKind
 from app.repositories.family_repository import FamilyRepository
 from app.services.funnel_service import FunnelService
@@ -43,13 +43,41 @@ class FamilyService:
         self, title: str, locale: str, first_adult: str, interests: tuple[str, ...]
     ) -> tuple[Family, Member, str, str]:
         """Create the family and its first adult; return (family, adult, invite, session)."""
-        family = await self._repo.create_family(title, locale)
+        family = await self._repo.create_family(title, locale, PRIVACY_POLICY_VERSION)
         invite, invite_hash = self._new_token()
         adult = NewMember(first_adult, AgeBand.ADULT, Role.ADULT, interests)
         member = await self._repo.add_member(family.id, adult, invite_hash, self._invite_expiry())
         await self._repo.set_owner(family.id, member.id)
         await self._funnel.record_event(EventKind.FAMILY_CREATED, family.id, member.id)
         return family, replace(member, is_owner=True), invite, await self._open_session(member.id)
+
+    async def require_daily_capacity(self, max_per_day: int, erased_today: int = 0) -> None:
+        """Refuse a new family once `max_per_day` were created this UTC day (0 = no limit).
+
+        Erased families of today still hold their place: `erased_today` is added to the live rows.
+        """
+        if not max_per_day:
+            return
+        midnight = self._utc_midnight()
+        if await self._repo.count_families_since(midnight) + erased_today >= max_per_day:
+            raise AdmissionRefused("daily_full")
+
+    async def delete_family(self, actor: Member, family_id: UUID) -> bool:
+        """Erase the family and all its data; only its owner may.
+
+        Returns True when the family had been created in the current UTC day.
+        """
+        if actor.family_id != family_id:
+            raise NotFound("family not found")
+        if not actor.is_owner:
+            raise Forbidden("only the family owner can delete the family")
+        family = await self._repo.get_family(family_id)
+        await self._repo.delete_family(family_id)
+        return family is not None and family.created_at >= self._utc_midnight()
+
+    @staticmethod
+    def _utc_midnight() -> datetime:
+        return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
     async def accept_invite(self, invite: str) -> tuple[Member, str]:
         """Consume a single-use invite; return the member and a new session token."""

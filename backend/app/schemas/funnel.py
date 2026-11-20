@@ -3,8 +3,9 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.domain.family import AgeBand
+from app.schemas.pilot import PilotAttribution
 
-Locale = Literal["ru", "en"]
+Locale = Literal["ru", "en", "es", "zh-CN"]
 KidsBand = Literal[AgeBand.B3_5, AgeBand.B6_9, AgeBand.B10_13, AgeBand.B14_17]
 
 
@@ -20,6 +21,7 @@ class WaitlistRequest(BaseModel):
     family_size: Annotated[int, Field(ge=1, le=12)]
     kids_age_bands: Annotated[list[KidsBand], Field(max_length=4)] = []
     locale: Locale = "ru"
+    attribution: PilotAttribution | None = None
 
     @field_validator("email")
     @classmethod

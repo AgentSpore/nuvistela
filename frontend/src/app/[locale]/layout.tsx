@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/site-header";
 import { routing } from "@/i18n/routing";
 import "@fontsource-variable/onest";
 import "@fontsource-variable/literata";
@@ -25,7 +24,12 @@ export const viewport: Viewport = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("title"), description: t("description") };
+  return {
+    title: t("title"),
+    description: t("description"),
+    manifest: "/manifest.webmanifest",
+    icons: { apple: "/apple-touch-icon.png" },
+  };
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
@@ -35,10 +39,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale}>
       <body className="min-h-dvh antialiased">
-        <NextIntlClientProvider>
-          <SiteHeader />
-          {children}
-        </NextIntlClientProvider>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

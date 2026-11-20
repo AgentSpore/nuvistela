@@ -1,34 +1,45 @@
-import { useTranslations } from "next-intl";
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
+import { LandingDemo } from "@/components/landing-demo";
+import { recordPilotEvent, type PilotIntent } from "@/lib/pilot-events";
 import Image from "next/image";
-import { ExampleGallery } from "@/components/example-gallery";
-import { WaitlistForm } from "@/components/waitlist-form";
-import { cardCls } from "@/components/styles";
 import { Link } from "@/i18n/navigation";
+import { ExampleGallery } from "@/components/example-gallery";
+import { exampleLoader } from "@/lib/example-loader";
 import { buttonClass } from "@/components/ui/button";
 
 const STEPS = [0, 1, 2] as const;
 
-function Hero() {
+function Hero({ intent }: { intent: PilotIntent }) {
   const t = useTranslations("landing");
+  const locale = useLocale();
   return (
-    <section className="grid items-center gap-12 py-10 sm:py-20 lg:grid-cols-[1.15fr_0.85fr]">
-      <div>
-        <p className="rise inline-flex items-center rounded-full border border-honey-deep/50 bg-honey-soft px-3.5 py-1 text-sm font-semibold">
+    <section className="grid items-center gap-x-12 pt-6 pb-10 sm:py-20 lg:grid-cols-[1.15fr_0.85fr] lg:grid-rows-[auto_auto]">
+      <div className="lg:col-start-1 lg:row-start-1">
+        <p className="inline-flex items-center rounded-full border border-honey-deep/50 bg-honey-soft px-3.5 py-1 text-sm font-semibold">
           {t("eyebrow")}
         </p>
-        <h1 className="rise mt-5 font-display text-4xl leading-[1.08] font-bold tracking-tight [animation-delay:60ms] sm:text-6xl">
+        <h1 className="mt-5 font-display text-4xl leading-[1.08] font-bold tracking-tight sm:text-5xl">
           {t("title")}
         </h1>
-        <p className="rise mt-5 max-w-[40ch] text-lg leading-snug text-muted [animation-delay:120ms] sm:text-2xl">
+        <p className="mt-5 max-w-[40ch] text-lg leading-snug text-muted sm:text-2xl">
           {t("pitch")}
         </p>
-        <div className="rise mt-9 flex flex-wrap items-center gap-3 [animation-delay:180ms]">
-          <a href="#waitlist" className={buttonClass("primary", "px-7 text-lg")}>
-            {t("cta")}
-          </a>
-          <Link href="/new" className={buttonClass("ghost", "px-6 text-lg")}>
+      </div>
+      <div className="lg:col-start-1 lg:row-start-2">
+        <div className="mt-7 flex flex-wrap items-center gap-3 sm:mt-9">
+          <Link
+            href="/new"
+            onClick={() => void recordPilotEvent("cta_click", locale, intent)}
+            className={buttonClass("primary", "px-7 text-lg")}
+          >
             {t("ctaTry")}
           </Link>
+          <a href="#demo" className={buttonClass("ghost", "px-6 text-lg")}>
+            {t("demoCta")}
+          </a>
         </div>
         <p className="mt-5 max-w-[48ch] text-muted">{t("trust")}</p>
       </div>
@@ -37,9 +48,11 @@ function Hero() {
         alt=""
         width={768}
         height={768}
-        priority
-        unoptimized
-        className="rise aspect-square w-full max-w-md rounded-[2rem] border border-line object-cover shadow-soft [animation-delay:240ms] lg:max-w-none"
+        sizes="(min-width: 1024px) 40vw, (min-width: 640px) 448px, 100vw"
+        loader={exampleLoader}
+        preload
+        fetchPriority="high"
+        className="mt-6 aspect-[16/10] max-h-[40vh] w-full rounded-[2rem] border border-line object-cover shadow-soft sm:mt-10 sm:aspect-square sm:max-h-none sm:max-w-md lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:max-w-none"
       />
     </section>
   );
@@ -72,34 +85,14 @@ function Steps() {
   );
 }
 
-function WaitlistSection() {
-  const w = useTranslations("waitlist");
-  return (
-    <section
-      id="waitlist"
-      aria-labelledby="wl-h"
-      className="mt-14 scroll-mt-4 grid gap-8 border-t border-line pt-10 sm:mt-20 sm:pt-14 lg:grid-cols-2"
-    >
-      <div>
-        <h2 id="wl-h" className="font-display text-2xl font-semibold sm:text-3xl">
-          {w("title")}
-        </h2>
-        <p className="mt-2 max-w-[40ch] text-muted">{w("lead")}</p>
-      </div>
-      <div className={cardCls}>
-        <WaitlistForm />
-      </div>
-    </section>
-  );
-}
-
 export function Landing() {
+  const [intent, setIntent] = useState<PilotIntent>(null);
   return (
     <main id="main" className="mx-auto w-full max-w-5xl px-5 pb-20 sm:px-8">
-      <Hero />
+      <Hero intent={intent} />
+      <LandingDemo intent={intent} onIntent={setIntent} />
       <Steps />
       <ExampleGallery />
-      <WaitlistSection />
     </main>
   );
 }

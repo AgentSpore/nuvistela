@@ -6,6 +6,7 @@ from pydantic_ai.models.openrouter import OpenRouterModel, OpenRouterModelSettin
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 from pydantic_ai_harness.spend import BatchSpendStore, Budget, SpendLimits, SpendStore
 
+from app.agent.chat_spend import ChatMoneyGate, chat_price
 from app.agent.deps import GameDeps
 from app.agent.errors import AgentConfigError
 from app.agent.tools import game_tools
@@ -45,7 +46,8 @@ def build_game_master(
         api_key=settings.openrouter_api_key.get_secret_value(), http_client=http_client
     )
     model_settings = OpenRouterModelSettings(
-        openrouter_provider={"data_collection": "deny", "zdr": True, "require_parameters": True},
+        openrouter_provider=chat_price(settings).zdr_routing(),  # ZDR + the reservation's max_price
+        max_tokens=settings.chat_max_tokens,
         max_retries=0,  # the caller owns retries; one retry layer only
     )
     budget = Budget[GameDeps](
@@ -63,6 +65,6 @@ def build_game_master(
         deps_type=GameDeps,
         instructions=[INSTRUCTIONS, event_instructions],
         model_settings=model_settings,
-        capabilities=[game_tools(), spend],
+        capabilities=[game_tools(), spend, ChatMoneyGate()],
         retries=0,
     )

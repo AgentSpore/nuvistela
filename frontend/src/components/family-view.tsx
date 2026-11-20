@@ -5,9 +5,11 @@ import { absoluteInvite, reissueInvite, type Invite, type Member } from "@/lib/a
 import { errorKey } from "@/lib/errors";
 import { canReissue } from "@/lib/reissue";
 import { useMe, useMembers } from "@/lib/use-me";
+import { FamilyDelete } from "@/components/family-delete";
 import { Gate } from "@/components/gate";
-import { InviteLink, toLink, type Link } from "@/components/invite-link";
+import { InviteLink, InviteOnceNote, toLink, type Link } from "@/components/invite-link";
 import { MemberForm } from "@/components/member-form";
+import { PushToggle } from "@/components/push-optin";
 import { cardCls } from "@/components/styles";
 import { TelegramCard } from "@/components/telegram-card";
 import { Alert } from "@/components/ui/alert";
@@ -22,6 +24,7 @@ type RowProps = { member: Member; isSelf: boolean; canReissue: boolean };
 function MemberHead({ member, isSelf }: { member: Member; isSelf: boolean }) {
   const t = useTranslations("family");
   const tm = useTranslations("member");
+  const tc = useTranslations("common");
   return (
     <div className="flex items-center gap-3.5">
       <Avatar id={member.id} name={member.display_name} />
@@ -32,7 +35,10 @@ function MemberHead({ member, isSelf }: { member: Member; isSelf: boolean }) {
         <p className="mt-0.5 text-sm text-muted">
           {member.role === "adult"
             ? tm("roles.adult")
-            : `${tm("roles.child")}, ${tm(`bands.${member.age_band}`)}`}
+            : tc("pair", {
+                first: tm("roles.child"),
+                second: tm(`bands.${member.age_band}`),
+              })}
         </p>
       </div>
       <div className="flex flex-col items-end gap-1.5">
@@ -92,6 +98,7 @@ function MemberRow({ member, isSelf, canReissue: allowed }: RowProps) {
         </ul>
       )}
       {url && <p className="text-sm text-muted">{t("reissued")}</p>}
+      {url && <InviteOnceNote short />}
       {failure && <Alert>{failure}</Alert>}
     </li>
   );
@@ -124,16 +131,21 @@ function AdultPanel({
             <h2 className="mb-4 font-display text-xl font-semibold">
               {t("invitesHeading")}
             </h2>
-            <ul className="mb-6 flex flex-col gap-4 border-b border-line pb-6">
-              {links.map((l) => (
-                <InviteLink key={l.id} id={l.id} name={l.name} url={l.url} />
-              ))}
-            </ul>
+            <div className="mb-6 flex flex-col gap-4 border-b border-line pb-6">
+              <ul className="flex flex-col gap-4">
+                {links.map((l) => (
+                  <InviteLink key={l.id} id={l.id} name={l.name} url={l.url} />
+                ))}
+              </ul>
+              <InviteOnceNote />
+            </div>
           </>
         )}
         <MemberForm familyId={me.family_id} onAdded={onAdded} />
       </div>
       <TelegramCard familyId={me.family_id} />
+      <PushToggle />
+      {me.is_owner && <FamilyDelete me={me} />}
     </div>
   );
 }

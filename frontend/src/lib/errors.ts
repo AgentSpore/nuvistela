@@ -19,6 +19,17 @@ export function errorKey(e: unknown): ErrorKey {
   return "generic";
 }
 
+const ADMISSION_KEYS: Record<string, "rateLimited" | "dailyFull"> = {
+  rate_limited: "rateLimited",
+  daily_full: "dailyFull",
+};
+
+/** Message key under `errors.*` when the server refuses a new game or invite right now. */
+export function admissionKey(e: unknown): "rateLimited" | "dailyFull" | null {
+  if (!(e instanceof ApiError) || e.status !== 429 || !e.code) return null;
+  return ADMISSION_KEYS[e.code] ?? null;
+}
+
 const AGENT_STATUS: Record<number, AgentNote> = {
   409: "busy",
   422: "textTooLong",

@@ -1,0 +1,506 @@
+{
+  "meta": {
+    "title": "Nuvistela: una aventura en la vida real",
+    "description": "Completen una pequeña actividad real y desbloqueen el siguiente capítulo de una historia creada con ayuda de IA, en solitario o con sus seres queridos.",
+    "ogTitle": "Nuvistela: juego de aventuras en familia · gratis",
+    "ogDescription": "Las tareas de la vida real abren los capítulos de su cuento. Sin registro ni correo: empiecen a jugar en un minuto, solos o en familia.",
+    "ogImageAlt": "Ilustración colorida: una familia en un camino de arcoíris por el mundo de cuento de Nuvistela"
+  },
+  "landing": {
+    "eyebrow": "Juego de aventuras en familia · gratis",
+    "title": "Un cuento protagonizado por ustedes, donde las tareas de la vida real desbloquean cada capítulo",
+    "pitch": "Ordenar una habitación, dar un paseo, terminar un libro: un narrador con IA continúa una historia sobre ustedes. En solitario o en familia.",
+    "ctaTry": "Empezar a jugar",
+    "trust": "No hace falta correo ni cuenta: bastan el título de la partida, su nombre y un par de intereses.",
+    "stepsLabel": "Cómo funciona",
+    "steps": [
+      {
+        "t": "Creen su mundo",
+        "d": "En solitario o con sus seres queridos: cuenten quién participa y qué le gusta a cada persona. Los personajes y el mundo de la historia se dibujan para ustedes."
+      },
+      {
+        "t": "Elijan una actividad",
+        "d": "Ordenar, pasear, una afición: el narrador propone una pequeña actividad real que encaje con ustedes y, si participan niños, con cada edad."
+      },
+      {
+        "t": "Márquenla y reciban el siguiente capítulo",
+        "d": "Quien juega en solitario la marca por su cuenta; en compañía, otra persona puede confirmarla. La historia continúa con un nuevo capítulo y una próxima actividad."
+      }
+    ],
+    "gallery": {
+      "label": "Ejemplos de mundos de cuento",
+      "note": "Familias ficticias e ilustraciones creadas con IA. En su historia, los protagonistas serán ustedes.",
+      "items": [
+        {
+          "alt": "Una familia pasea por un pueblo de cuento bajo un arcoíris"
+        },
+        {
+          "alt": "Un velero entre islas sobre los caparazones de tortugas"
+        },
+        {
+          "alt": "Una familia pirata en la playa con una concha de perla mágica"
+        },
+        {
+          "alt": "Una familia en la cubierta de un barco al atardecer"
+        }
+      ]
+    },
+    "privacy": "Sin rastreadores de terceros. Los datos de los niños nunca se usan para publicidad.",
+    "languageScope": "El juego está en ruso, inglés, español y chino",
+    "demoCta": "Probar el ejemplo",
+    "demo": {
+      "badge": "DEMO · EJEMPLO PREPARADO",
+      "title": "Una tarea, un nuevo capítulo",
+      "disclosure": "Elijan para quién quieren probarlo. Es un ejemplo: no necesitan cuenta, realizar una tarea real ni generar una historia personalizada.",
+      "intentLabel": "¿Para quién es la historia?",
+      "solo": "Para mí",
+      "family": "Para mi familia",
+      "start": "Abrir una misión de ejemplo",
+      "soloQuest": "Ejemplo: despejar la mesa para hacer algo que les guste. En esta demo basta con pulsar el botón; no hace falta realizar la tarea ahora.",
+      "familyQuest": "Ejemplo: recoger en familia los bloques de construcción. En esta demo basta con pulsar el botón; no hace falta la confirmación de una persona adulta.",
+      "complete": "Ver el capítulo de ejemplo",
+      "chapterTitle": "El camino vuelve a estar abierto",
+      "soloChapter": "El claro volvió a tener espacio. Una persona viajera descubrió un sendero brillante y dio el primer paso hacia una nueva historia.",
+      "familyChapter": "Todo volvió a su sitio y un sendero se iluminó en el valle. La aventura siguió adelante, esta vez en compañía.",
+      "sampleNote": "El texto y la imagen están preparados de antemano. Son personajes ficticios, no ustedes ni su familia. En el juego, el capítulo estará relacionado con una tarea realizada; aquí solo se muestra un ejemplo.",
+      "imageAlt": "Ilustración preparada de personajes ficticios junto a un sendero de colores",
+      "signup": "Empezar a jugar",
+      "share": "Compartir el enlace al ejemplo",
+      "publicLink": "Enlace público al ejemplo",
+      "shareStatus": {
+        "closed": "La ventana para compartir se cerró. No sabemos si el enlace se envió o se recibió.",
+        "cancelled": "Se canceló la acción de compartir. Pueden continuar sin enviar el enlace.",
+        "copied": "Enlace público copiado. Ustedes deciden a quién enviarlo.",
+        "failed": "No se pudo abrir la ventana ni copiar el enlace. Pueden seleccionarlo y copiarlo abajo."
+      }
+    }
+  },
+  "locale": {
+    "label": "Idioma",
+    "ru": "Русский",
+    "en": "English",
+    "es": "Español",
+    "zh-CN": "简体中文"
+  },
+  "common": {
+    "labelValue": "{label}: {value}",
+    "labelValueStyled": "{label}: <v>{value}</v>",
+    "pair": "{first}, {second}"
+  },
+  "nav": {
+    "label": "Secciones",
+    "new": "Nueva partida",
+    "play": "Jugar",
+    "family": "Jugadores",
+    "home": "Nuvistela, inicio",
+    "more": "Más",
+    "skip": "Saltar al contenido",
+    "adventure": "Aventura"
+  },
+  "gate": {
+    "loading": "Cargando…",
+    "error": "No se pudieron cargar los datos. Prueben a recargar la página.",
+    "anonymous": "Todavía no han iniciado sesión. Abran su enlace de invitación o empiecen una partida.",
+    "create": "Empezar a jugar",
+    "errorTitle": "No se pudo cargar",
+    "retry": "Reintentar",
+    "anonymousTitle": "Primero, iniciar sesión"
+  },
+  "errors": {
+    "required": "Completar este campo",
+    "tooLong": "El valor es demasiado largo",
+    "tagTooLong": "Cada interés admite como máximo 30 caracteres",
+    "tooMany": "Máximo 10 intereses",
+    "roleMismatch": "El rol de persona adulta solo corresponde al rango de edad adulto",
+    "network": "No hay conexión con el servidor. Revisen la conexión e inténtenlo de nuevo.",
+    "rateLimited": "Demasiados intentos, vuelve a probar dentro de una hora",
+    "dailyFull": "Hoy ya no quedan plazas — vuelve mañana",
+    "unauthorized": "Primero inicien sesión con su enlace de invitación.",
+    "forbidden": "Solo las personas adultas pueden hacerlo.",
+    "generic": "Algo salió mal. Inténtenlo de nuevo."
+  },
+  "invite": {
+    "linkFor": "Enlace de acceso para {name}",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyFailed": "No se pudo copiar; seleccionen el enlace a mano",
+    "expiresNote": "El enlace funciona una sola vez.",
+    "share": "Compartir",
+    "once": "Cada enlace se muestra una sola vez. ¿Lo perdieron? En «Jugadores», pulsen «Nuevo enlace»: el anterior dejará de funcionar.",
+    "onceShort": "Cada enlace se muestra una sola vez."
+  },
+  "member": {
+    "heading": "Añadir participante",
+    "name": "Nombre",
+    "band": "Edad",
+    "interests": "Intereses",
+    "interestsHint": "Separados por comas, hasta 10",
+    "submit": "Añadir",
+    "bands": {
+      "3-5": "3–5 años",
+      "6-9": "6–9 años",
+      "10-13": "10–13 años",
+      "14-17": "14–17 años",
+      "adult": "Persona adulta"
+    },
+    "roles": {
+      "adult": "Persona adulta",
+      "child": "Niño o niña"
+    }
+  },
+  "new": {
+    "heading": "¿Quién va a jugar?",
+    "title": "Nombre de la partida",
+    "name": "Su nombre",
+    "interests": "Intereses",
+    "interestsHint": "Separados por comas, hasta 10",
+    "submit": "Continuar",
+    "linksHeading": "Enlaces de acceso",
+    "linksHint": "Envíen a cada persona su propio enlace. Al abrirlo, entra directamente en el juego. Cada enlace es personal: no lo compartan.",
+    "intro": "Un nombre para la partida, su nombre y un par de intereses: el narrador construirá una historia a su medida.",
+    "step1": "Jugadores",
+    "step2": "Enlaces",
+    "step2Solo": "Listo",
+    "stepsLabel": "Pasos",
+    "createdHeading": "Partida lista",
+    "play": "Ir al juego",
+    "addMore": "¿Juegan con más personas? Añádanlas ahora, mientras están cerca. También se puede hacer después, en la página de jugadores.",
+    "addMember": "Añadir participante",
+    "addAnother": "Añadir otro participante",
+    "linkReady": "Enlace listo: {name}",
+    "consent": "Soy el padre, la madre o el representante legal de los niños que añadiré y acepto la <policy>política de privacidad</policy>"
+  },
+  "play": {
+    "title": "Jugar",
+    "members": "Jugadores",
+    "chat": "Chat con el narrador",
+    "empty": "Escriban su primer mensaje al narrador.",
+    "input": "Mensaje para el narrador",
+    "placeholder": "Escribir un mensaje…",
+    "send": "Enviar",
+    "note": {
+      "soon": "El narrador llegará pronto. Todavía nadie ha leído su mensaje.",
+      "failed": "No se pudo enviar el mensaje. Inténtenlo de nuevo.",
+      "busy": "El narrador aún está respondiendo. Denle un momento y sigan escribiendo.",
+      "limit": "Se alcanzó el límite de hoy. Vuelvan mañana: el narrador seguirá aquí.",
+      "unavailable": "El narrador no está disponible ahora y no es culpa de ustedes. Inténtenlo de nuevo en unos minutos.",
+      "textTooLong": "El mensaje es demasiado largo. Acórtenlo, por favor.",
+      "network": "No hay conexión con el servidor. Revisen la conexión e inténtenlo de nuevo.",
+      "unauthorized": "Primero inicien sesión con su enlace de invitación.",
+      "forbidden": "No pueden hacer esto."
+    },
+    "you": "Yo",
+    "agent": "Narrador",
+    "emptyHint": "Con sus propias palabras o con un toque:",
+    "typing": "El narrador está escribiendo…",
+    "hint": "Intro envía, Mayús+Intro añade una línea nueva.",
+    "counter": "{count} de {max}",
+    "counterLabel": "Caracteres: {count} de {max}",
+    "noteTitle": {
+      "soon": "El narrador llegará pronto",
+      "busy": "Un momento",
+      "limit": "Por hoy, es todo",
+      "unavailable": "Narrador no disponible",
+      "failed": "Mensaje no enviado",
+      "textTooLong": "Mensaje demasiado largo",
+      "network": "Sin conexión",
+      "unauthorized": "Hay que iniciar sesión",
+      "forbidden": "No permitido"
+    },
+    "restored": "Su texto sigue en el cuadro.",
+    "startersLabel": "Preguntas listas",
+    "starter": {
+      "today": "¿Qué nos espera hoy?",
+      "world": "Cuéntanos sobre nuestro mundo",
+      "riddle": "Inventa una adivinanza"
+    }
+  },
+  "family": {
+    "title": "Jugadores",
+    "reissue": "Nuevo enlace",
+    "reissued": "El enlace anterior deja de funcionar y cierra la sesión de esta persona en todos los dispositivos. Envíenle el nuevo.",
+    "reissueFor": "Nuevo enlace para {name}",
+    "subtitle": "{count, plural, one {# participante} other {# participantes}}",
+    "owner": "Creó la partida",
+    "you": "Yo",
+    "empty": "Todavía no hay nadie.",
+    "loadFailed": "No se pudo cargar la lista de jugadores.",
+    "retry": "Reintentar",
+    "invitesHeading": "Enlaces nuevos",
+    "telegram": {
+      "heading": "Conectar Telegram",
+      "intro": "Vinculen su chat y el narrador también responderá allí.",
+      "get": "Obtener un código",
+      "again": "Obtener un código nuevo",
+      "codeLabel": "Código",
+      "step": "Añadan el bot a su chat y envíen este comando:",
+      "copyCommand": "Copiar comando",
+      "copiedCommand": "Comando copiado",
+      "expires": "El código es válido hasta las {time}.",
+      "expired": "Este código caducó. Obtengan uno nuevo.",
+      "privateHint": "En un chat privado con el bot basta con «/link código».",
+      "copyFailed": "No se pudo copiar; seleccionen el comando a mano",
+      "addToGroup": "Añadir el bot a un grupo",
+      "notConnected": "Telegram no está disponible ahora para Nuvistela. Inténtenlo más tarde."
+    }
+  },
+  "join": {
+    "working": "Iniciando sesión…",
+    "invalid": "Este enlace no es válido o ya se usó. Pidan uno nuevo a una persona adulta.",
+    "failed": "No se pudo iniciar sesión. Revisen la conexión y abran el enlace de nuevo.",
+    "create": "Empezar a jugar",
+    "invalidTitle": "Este enlace no se abre",
+    "failedTitle": "No se pudo iniciar sesión",
+    "consent": "Al continuar, acepta la <policy>política de privacidad</policy>."
+  },
+  "adventure": {
+    "title": "Aventura",
+    "startTitle": "Inventar su propio mundo",
+    "startHint": "Su aventura transcurrirá en este mundo. El mundo se elige una sola vez.",
+    "genre": {
+      "fairy_tale": "Cuento de hadas",
+      "space": "Espacio",
+      "pirates": "Piratas",
+      "custom": "Mundo propio"
+    },
+    "customLabel": "Describir el mundo",
+    "customHint": "Dónde ocurre, el ambiente, quién está alrededor. Cuantos más detalles, más se parecerá el mundo a su idea.",
+    "start": "Empezar",
+    "starting": "Empezando…",
+    "questTitle": "Su misión",
+    "skill": "Aprendizaje",
+    "done": "¡Hecho!",
+    "sheetTitle": "¿Se cumplió la misión?",
+    "noteLabel": "Nota (opcional)",
+    "noteHint": "¿Qué salió bien? Pasará a la historia.",
+    "counter": "{count} de {max}",
+    "send": "Enviar el registro",
+    "sending": "Enviando…",
+    "cancel": "Cerrar",
+    "reward": {
+      "reaction": "El mundo responde",
+      "done": "{title}: hecho",
+      "writing": "Escribiendo su capítulo…"
+    },
+    "waitingQuest": "La siguiente misión llegará con el nuevo capítulo.",
+    "paused": "Actualización en pausa, reintentando.",
+    "storyTitle": "Su historia",
+    "storyEmpty": "El primer capítulo aparece al terminar la misión.",
+    "chapter": {
+      "label": "Capítulo {seq}",
+      "queued": {
+        "title": "El capítulo espera su turno",
+        "text": "El narrador empezará pronto. Pueden cerrar la página: la historia queda guardada."
+      },
+      "writing": {
+        "title": "El narrador está escribiendo",
+        "text": "La página se actualiza sola."
+      },
+      "delayed_model": {
+        "title": "El narrador no está disponible ahora",
+        "text": "Su registro está guardado y lo intentaremos de nuevo un poco más tarde. El juego sigue: pueden tomar una misión nueva."
+      },
+      "delayed_budget": {
+        "title": "Se alcanzó el límite de historias de hoy",
+        "text": "Su registro está guardado y lo intentaremos de nuevo un poco más tarde. El juego sigue: pueden tomar una misión nueva."
+      },
+      "slow": "Este capítulo tarda más de lo habitual. La página se actualizará sola. Pueden cerrarla: no se perderá nada."
+    },
+    "retry": "Reintentar",
+    "note": {
+      "limit": "Hoy se usaron muchos reintentos. Lo intentaremos de nuevo un poco más tarde.",
+      "conflict": "Este capítulo ya está en curso. La página se actualizó.",
+      "failed": "No se pudo enviar. No se pierde nada: inténtenlo de nuevo.",
+      "forbidden": "Esto solo lo puede hacer una persona adulta."
+    },
+    "loadFailed": "No se pudo cargar la aventura",
+    "world": {
+      "heading": "Su mundo",
+      "waitingTitle": "Se está escribiendo el mundo",
+      "waitingText": "El narrador está inventando lugares y personajes. La página se actualiza sola. Pueden cerrarla: el mundo queda guardado.",
+      "waitingYourWorld": "Vuestro mundo",
+      "waitingSteps": {
+        "places": "Inventando los lugares",
+        "heroes": "Eligiendo a los héroes",
+        "quest": "Preparando la primera misión"
+      },
+      "hero": "Su personaje",
+      "trait": "Rasgo",
+      "skill": "Superpoder",
+      "coverAlt": "Imagen de portada del mundo «{title}»",
+      "coverDrawing": "Dibujando tu mundo…",
+      "coverTomorrow": "Terminaremos la imagen más tarde: el juego ya está en marcha",
+      "coverGrown": "El mundo ha crecido",
+      "coverGrowing": "El mundo está cambiando…",
+      "about": "Sobre el mundo",
+      "places": "Lugares",
+      "chronicle": "Crónica del mundo",
+      "chronicleNew": "Nuevo:",
+      "learned": "Lo que aprendimos",
+      "slow": "El mundo tarda más de lo habitual. La página sigue comprobándolo sola.",
+      "loadFailed": "No se pudo cargar el mundo"
+    },
+    "world3d": {
+      "walk": "Pasear por el mundo · {upTo}{mb} MB",
+      "upTo": "hasta ",
+      "walkShort": "En 3D",
+      "walkLabel": "Pasear por el mundo en 3D, {upTo}{mb} MB",
+      "close": "Cerrar",
+      "panoAlt": "Panorámica del mundo",
+      "label": "Paseando por el mundo"
+    },
+    "customTooLong": "La descripción supera los {max} caracteres. Acórtenla y comenzamos.",
+    "examplesLabel": "¿No saben por dónde empezar? Toquen un ejemplo.",
+    "presetsLabel": "o elegir uno ya preparado",
+    "examples": {
+      "one": "Una ciudad sobre el lomo de tortugas gigantes que flotan entre nubes cálidas. Luciérnagas en lugar de farolas.",
+      "two": "Una escuela en el bosque para jóvenes que inventan cosas: clases entre las ramas y el misterio del arcoíris desaparecido.",
+      "three": "Una estación abandonada en el borde de la Luna donde viejos robots remiendan las estrellas.",
+      "four": "Un valle donde el viento redibuja el mapa cada mañana y todos buscan juntos el camino a casa."
+    },
+    "waitWorld": "{name} está eligiendo su mundo: ¡pronto empezamos!",
+    "waitWorldAnyone": "Una persona adulta está eligiendo su mundo: ¡pronto empezamos!",
+    "waitWorldHint": "La primera misión aparecerá aquí sola, no hace falta recargar la página.",
+    "worldTaken": "Otro adulto ya eligió el mundo: mirad cómo quedó. La descripción que escribiste no se guardó."
+  },
+  "share": {
+    "ogTitle": "Nuestro mundo: {title}",
+    "ogDescription": "Echen un vistazo a nuestro mundo y creen el suyo: la historia crece con las tareas de la vida real.",
+    "tagline": "Nuestro mundo, hecho de tareas reales y un poco de imaginación.",
+    "counts": "{quests, plural, one {# misión cumplida} other {# misiones cumplidas}} · {chapters, plural, one {# capítulo} other {# capítulos}}",
+    "cta": "Crear su propio mundo",
+    "unavailableTitle": "Tarjeta no disponible",
+    "unavailableText": "Este enlace se desactivó o nunca existió. Aun así, pueden crear un mundo propio.",
+    "sheet": {
+      "open": "Compartir este mundo",
+      "visibility": "Cualquiera con el enlace puede verlo. Se puede desactivar",
+      "create": "Crear enlace",
+      "close": "Cerrar",
+      "linkLabel": "Enlace de la tarjeta",
+      "status": {
+        "shared": "La ventana para compartir se cerró. No sabemos si el enlace se envió.",
+        "cancelled": "Se canceló la acción de compartir. El enlace está creado; pueden enviarlo más tarde.",
+        "copied": "Enlace copiado. Ustedes deciden a quién enviarlo.",
+        "failed": "No se pudo abrir la ventana ni copiar el enlace. Selecciónenlo abajo y cópienlo a mano."
+      },
+      "revoke": "Desactivar enlace",
+      "revokeAsk": "¿Desactivar el enlace? La tarjeta dejará de abrirse para todas las personas a las que se la enviaron.",
+      "revokeYes": "Sí, desactivar",
+      "revokeNo": "Mantenerlo",
+      "revoked": "Enlace desactivado. La tarjeta ya no se abre.",
+      "errors": {
+        "unavailable": "Ahora no se puede compartir: el mundo no tiene imagen lista o compartir está desactivado temporalmente.",
+        "limit": "Hoy se crearon muchos enlaces. Inténtenlo mañana o envíen el que ya crearon.",
+        "generic": "No funcionó. Revisen la conexión e inténtenlo de nuevo."
+      }
+    }
+  },
+  "push": {
+    "question": "¿Quieren que avisemos cuando la próxima misión esté lista?",
+    "yes": "Sí, avisar",
+    "no": "Ahora no",
+    "heading": "Avisos",
+    "toggle": "Avisar en este dispositivo cuando haya una misión nueva",
+    "blocked": "Las notificaciones están desactivadas en los ajustes del navegador.",
+    "failed": "No se pudieron activar los avisos. Inténtenlo más tarde.",
+    "homeScreen": "Añadan la app a la pantalla de inicio para recibir notificaciones",
+    "taken": "En este dispositivo los avisos ya están activados para otra familia."
+  },
+  "privacy": {
+    "title": "Política de privacidad de Nuvistela",
+    "effective": "En vigor desde el 18 de noviembre de 2026.",
+    "version": "2026-11-18",
+    "versionLabel": "Versión",
+    "sections": [
+      {
+        "h": "Quiénes somos",
+        "p": [
+          "Nuvistela es un juego familiar: adultos y niños realizan juntos pequeñas tareas en casa, y la historia del mundo se escribe a partir de sus marcas. El operador de los datos personales es el empresario individual [operator name] (OGRNIP [OGRNIP], INN [INN], Rusia). Para consultas sobre sus datos, escriba a privacy@example.com."
+        ]
+      },
+      {
+        "h": "Qué datos conservamos",
+        "p": [
+          "- El nombre de la familia y los nombres o apodos de los jugadores que usted introduce. En lugar del nombre real puede indicar un apodo.",
+          "- El grupo de edad de cada jugador (3–5, 6–9, 10–13, 14–17 años o adulto) y sus intereses, si los ha indicado.",
+          "- Sus marcas de tareas completadas y los mensajes en el chat con el narrador.",
+          "- La historia del mundo: las tareas, los capítulos, las portadas y las escenas 3D creadas para su familia.",
+          "- Si ha conectado Telegram: el identificador del chat y los textos que el bot recibe y envía en ese chat.",
+          "- Si ha activado las notificaciones: la dirección de suscripción de su navegador y la zona horaria.",
+          "- Si dejó anteriormente una solicitud para el piloto: su dirección de correo electrónico, el tamaño de la familia, los grupos de edad de los niños y el idioma.",
+          "- Eventos de uso (por ejemplo, «tarea completada») vinculados a la familia, sin nombres ni texto; se eliminan junto con la familia.",
+          "- Datos técnicos de las solicitudes (dirección IP, navegador) en los registros del servidor web, necesarios para la protección contra abusos.",
+          "No pedimos fotografías, direcciones, teléfonos ni documentos, y no utilizamos los datos de los niños con fines publicitarios. En el sitio no hay contadores de terceros ni rastreadores publicitarios."
+        ]
+      },
+      {
+        "h": "Para qué",
+        "p": [
+          "Para llevar adelante el juego de su familia: idear tareas, escribir capítulos e imágenes del mundo, recordarle una nueva tarea si usted lo desea y contactarle por una solicitud del piloto presentada antes. La base es su consentimiento, que usted otorga al crear la familia, y el cumplimiento del contrato de uso del juego."
+        ]
+      },
+      {
+        "h": "Niños",
+        "p": [
+          "La familia la crea un adulto. Al crearla, confirma que es el padre, la madre o el representante legal de los niños que añade y da su consentimiento al tratamiento de sus datos. Un niño entra en el juego únicamente por invitación de este adulto."
+        ]
+      },
+      {
+        "h": "A quién transmitimos los datos",
+        "p": [
+          "Los textos de las historias y de las tareas y las imágenes los escriben modelos de inteligencia artificial. Les transmitimos solo lo necesario para un capítulo o una imagen concretos, y prohibimos a los proveedores de los modelos conservar las solicitudes y entrenarse con ellas.",
+          "- **OpenRouter** (EE. UU.): acceso a modelos de lenguaje y de imágenes. En los capítulos y las descripciones del mundo no se transmiten nombres: se sustituyen por una etiqueta. El narrador en el chat ve el nombre de la familia y los nombres de los jugadores para dirigirse a ustedes. Las descripciones para las imágenes se depuran de nombres, edades e intereses.",
+          "- **World Labs** (EE. UU.): escenas 3D del mundo. Se transmite solo la descripción de la escena, sin nombres; la escena está cerrada al acceso público.",
+          "- **Telegram**: si ha conectado el bot, los mensajes de su chat.",
+          "- **Servicios de notificaciones del navegador** (Google, Apple, Mozilla, Microsoft, según el navegador): el texto del recordatorio, enviado a la dirección de suscripción.",
+          "- **HOSTKEY** (Finlandia, Países Bajos): los servidores en los que se almacenan los datos.",
+          "Algunas de estas empresas se encuentran fuera de su país de residencia. No vendemos datos a nadie."
+        ]
+      },
+      {
+        "h": "Enlaces «Compartir»",
+        "p": [
+          "Un adulto puede crear un enlace público a la tarjeta del mundo. La ve cualquiera que tenga el enlace; en la tarjeta no se muestran los nombres de los jugadores. El enlace puede revocarse en cualquier momento."
+        ]
+      },
+      {
+        "h": "Cookies y memoria del navegador",
+        "p": [
+          "- `bumbli_session`: acceso a la familia, hasta 365 días.",
+          "- `NEXT_LOCALE`: el idioma elegido.",
+          "- Memoria del navegador: qué eventos del mundo ya ha visto, la portada del mundo, el rechazo de las notificaciones y las claves de servicio que impiden enviar dos veces una misma marca."
+        ]
+      },
+      {
+        "h": "Cuánto tiempo los conservamos",
+        "p": [
+          "Los datos de la familia se conservan mientras exista la familia. El propietario de la familia puede eliminarla en la sección «Familia»: se eliminan los jugadores, las tareas, los capítulos, las imágenes, las escenas 3D, los enlaces, las suscripciones y los vínculos con Telegram. La solicitud del piloto presentada antes se eliminará a petición en privacy@example.com. En el registro de gastos de los modelos solo permanecen los importes, sin vínculo con la familia."
+        ]
+      },
+      {
+        "h": "Sus derechos",
+        "p": [
+          "Usted puede saber qué datos conservamos, corregirlos, eliminar la familia, retirar su consentimiento (lo que significa eliminar la familia) y rechazar las notificaciones. Escriba a privacy@example.com y responderemos en un plazo de 10 días hábiles. También tiene derecho a dirigirse a la autoridad de protección de datos personales de su país."
+        ]
+      },
+      {
+        "h": "Cambios",
+        "p": [
+          "Si la política cambia, en esta página aparecerán una nueva fecha y una nueva versión. Le informaremos en el juego de los cambios sustanciales."
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "privacy": "Política de privacidad"
+  },
+  "erase": {
+    "button": "Eliminar la familia y todos los datos",
+    "heading": "¿Eliminar la familia?",
+    "hint": "Es irreversible: se eliminarán los jugadores, las tareas, los capítulos, las imágenes, las escenas 3D, los enlaces, las suscripciones y los vínculos con Telegram. Para confirmar, escriba «{phrase}».",
+    "label": "Confirmación",
+    "confirm": "Eliminar para siempre",
+    "cancel": "Cancelar",
+    "fallback": "ELIMINAR"
+  }
+}

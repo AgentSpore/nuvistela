@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { recordLandingView } from "@/lib/waitlist";
+import { recordPilotEvent } from "@/lib/pilot-events";
 
 let sent = false;
 
@@ -11,6 +12,7 @@ export function LandingView({ locale }: { locale: string }) {
     if (sent) return;
     sent = true;
     recordLandingView(locale);
+    void recordPilotEvent("landing_view", locale, null);
   }, [locale]);
   return null;
 }

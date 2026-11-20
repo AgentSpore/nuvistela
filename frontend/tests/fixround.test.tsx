@@ -135,7 +135,7 @@ describe("/play", () => {
     const retry = await screen.findByRole("button", { name: "Повторить" });
     expect(screen.getByRole("alert")).toHaveTextContent("Не удалось загрузить");
     await userEvent.click(retry);
-    expect(await screen.findByRole("list", { name: "Семья" })).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Участники" })).toBeInTheDocument();
   });
 
   describe("autoscroll", () => {

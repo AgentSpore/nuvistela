@@ -46,7 +46,10 @@ function MembersStrip({ familyId }: { familyId: string }) {
   );
 }
 
-function EmptyChat() {
+const STARTERS = ["today", "world", "riddle"] as const;
+
+/** An empty chat offers a first message in one tap, so nobody faces a blank page. */
+function EmptyChat({ onStart }: { onStart: (text: string) => void }) {
   const t = useTranslations("play");
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
@@ -55,6 +58,19 @@ function EmptyChat() {
       </span>
       <p className="font-display text-xl font-semibold">{t("empty")}</p>
       <p className="max-w-[34ch] text-muted">{t("emptyHint")}</p>
+      <ul aria-label={t("startersLabel")} className="flex flex-wrap justify-center gap-2">
+        {STARTERS.map((k) => (
+          <li key={k}>
+            <Button
+              variant="ghost"
+              onClick={() => onStart(t(`starter.${k}`))}
+              className="rounded-full"
+            >
+              {t(`starter.${k}`)}
+            </Button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -87,6 +103,8 @@ const NOTE_TONE: Partial<Record<AgentNote, Tone>> = {
   unavailable: "info",
 };
 
+type Note = { key: AgentNote; restored: boolean };
+
 const NEAR_BOTTOM_PX = 80;
 
 /** Keeps the log pinned to the newest line unless the reader scrolled up to reread. */
@@ -109,14 +127,15 @@ type LogProps = {
   me: Member;
   messages: Message[];
   busy: boolean;
-  note: AgentNote | null;
+  note: Note | null;
+  onStart: (text: string) => void;
 };
 
-function ChatLog({ me, messages, busy, note }: LogProps) {
+function ChatLog({ me, messages, busy, note, onStart }: LogProps) {
   const t = useTranslations("play");
   return (
     <>
-      {messages.length === 0 && !busy && <EmptyChat />}
+      {messages.length === 0 && !busy && <EmptyChat onStart={onStart} />}
       <div role="log" aria-live="polite">
         <ol className="flex flex-col gap-3.5">
           {messages.map((x) => (
@@ -131,8 +150,10 @@ function ChatLog({ me, messages, busy, note }: LogProps) {
       </div>
       {busy && <Typing />}
       {note && (
-        <Alert tone={NOTE_TONE[note] ?? "danger"} title={t(`noteTitle.${note}`)}>
-          {`${t(`note.${note}`)} ${t("restored")}`}
+        <Alert tone={NOTE_TONE[note.key] ?? "danger"} title={t(`noteTitle.${note.key}`)}>
+          {note.restored
+            ? `${t(`note.${note.key}`)} ${t("restored")}`
+            : t(`note.${note.key}`)}
         </Alert>
       )}
     </>
@@ -145,18 +166,19 @@ function Chat({ me }: { me: Member }) {
   const t = useTranslations("play");
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
-  const [note, setNote] = useState<AgentNote | null>(null);
+  const [note, setNote] = useState<Note | null>(null);
   const [busy, setBusy] = useState(false);
   const { scroller, onScroll, stick } = useStickyScroll(
-    `${messages.length}|${busy}|${note}`,
+    `${messages.length}|${busy}|${note?.key}`,
   );
 
-  async function send() {
-    const text = draft.trim();
+  /** Sends `typed`; only a sent draft is cleared, and only it comes back into the field on failure. */
+  async function send(typed: string, fromDraft: boolean) {
+    const text = typed.trim();
     const mine: Message = { id: `m${nextId++}`, from: "me", text };
     stick();
     setMessages(append(mine));
-    setDraft("");
+    if (fromDraft) setDraft("");
     setNote(null);
     setBusy(true);
     try {
@@ -164,8 +186,8 @@ function Chat({ me }: { me: Member }) {
       setMessages(append({ id: `m${nextId++}`, from: "agent", text: reply }));
     } catch (err) {
       setMessages((l) => l.filter((x) => x.id !== mine.id));
-      setDraft((d) => (d ? `${text}\n${d}` : text));
-      setNote(agentNoteKey(err));
+      if (fromDraft) setDraft((d) => (d ? `${text}\n${d}` : text));
+      setNote({ key: agentNoteKey(err), restored: fromDraft });
     }
     setBusy(false);
   }
@@ -180,9 +202,20 @@ function Chat({ me }: { me: Member }) {
         onScroll={onScroll}
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-5"
       >
-        <ChatLog me={me} messages={messages} busy={busy} note={note} />
+        <ChatLog
+          me={me}
+          messages={messages}
+          busy={busy}
+          note={note}
+          onStart={(text) => void send(text, false)}
+        />
       </div>
-      <Composer value={draft} onChange={setDraft} onSend={send} busy={busy} />
+      <Composer
+        value={draft}
+        onChange={setDraft}
+        onSend={() => void send(draft, true)}
+        busy={busy}
+      />
     </section>
   );
 }

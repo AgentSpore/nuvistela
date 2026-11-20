@@ -1,4 +1,5 @@
 import asyncio
+import os
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
@@ -15,11 +16,19 @@ from app.agent.factory import build_game_master
 from app.core.config import Settings
 from app.main import create_app
 
+# The suite shares one database and creates hundreds of families; the daily cap has its own tests.
+os.environ.setdefault("MAX_NEW_FAMILIES_PER_DAY", "0")
+
+
+def _version(path: Path) -> int:
+    """Flyway orders by version number: V10 comes after V9, not after V1."""
+    return int(path.name[1:].split("__")[0])
+
 
 async def _apply_migrations(url: str) -> None:
     conn = await asyncpg.connect(url.replace("+asyncpg", ""))
     try:
-        for sql in sorted(MIGRATIONS_DIR.glob("V*.sql")):
+        for sql in sorted(MIGRATIONS_DIR.glob("V*.sql"), key=_version):
             await conn.execute(sql.read_text())
     finally:
         await conn.close()

@@ -41,6 +41,9 @@ services:
       context: ./frontend
       args:
         API_ORIGIN: http://backend:${PORT:-8080}
+    environment:
+      # Runtime copy: the share-card page fetches the card on the server (the build arg only feeds the rewrite).
+      API_ORIGIN: http://backend:${PORT:-8080}
     ports:
       - "3000:3000"
     depends_on:

@@ -34,7 +34,10 @@ def login(client: AsyncClient) -> Callable[[str], Awaitable[dict[str, str]]]:
 
 @pytest.fixture
 async def owner(client: AsyncClient, login: Callable[[str], Awaitable[dict[str, str]]]) -> Person:
-    resp = await client.post("/api/v1/families", json={"title": "Smiths", "display_name": "Papa"})
+    resp = await client.post(
+        "/api/v1/families",
+        json={"title": "Smiths", "display_name": "Papa", "privacy_consent": True},
+    )
     body = resp.json()
     return Person(
         body["member"]["id"], body["family_id"], body["invite_url"], await login(body["invite_url"])
@@ -98,7 +101,9 @@ async def test_child_reissuing_other_family_member_is_404(
     client: AsyncClient, owner: Person, add: Callable[[dict[str, str]], Awaitable[Person]]
 ) -> None:
     kid = await add(CHILD_BODY)
-    other = await client.post("/api/v1/families", json={"title": "Jones", "display_name": "Bob"})
+    other = await client.post(
+        "/api/v1/families", json={"title": "Jones", "display_name": "Bob", "privacy_consent": True}
+    )
     stranger = Person(other.json()["member"]["id"], other.json()["family_id"], "", {})
     assert await _reissue(client, kid, stranger) == 404
 

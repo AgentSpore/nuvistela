@@ -30,17 +30,26 @@ class FamilyRepository:
             is_owner=row.is_owner,
         )
 
-    async def create_family(self, title: str, locale: str) -> Family:
+    async def create_family(self, title: str, locale: str, policy_version: str) -> Family:
+        """Insert a family whose creator has just accepted the given policy version."""
         row = (
             await self._conn.execute(
                 text(
-                    "INSERT INTO families (title, locale) VALUES (:title, :locale)"
+                    "INSERT INTO families"
+                    " (title, locale, privacy_consent_at, privacy_policy_version)"
+                    " VALUES (:title, :locale, now(), :version)"
                     " RETURNING id, title, locale, created_at"
                 ),
-                {"title": title, "locale": locale},
+                {"title": title, "locale": locale, "version": policy_version},
             )
         ).one()
         return Family(row.id, row.title, row.locale, row.created_at)
+
+    async def count_families_since(self, since: datetime) -> int:
+        row = await self._conn.execute(
+            text("SELECT count(*) FROM families WHERE created_at >= :since"), {"since": since}
+        )
+        return row.scalar_one()
 
     async def add_member(
         self, family_id: UUID, new: NewMember, invite_hash: str, invite_expires_at: datetime
@@ -169,3 +178,18 @@ class FamilyRepository:
             text("UPDATE members SET interests = CAST(:interests AS text[]) WHERE id = :id"),
             {"id": member_id, "interests": list(interests)},
         )
+
+    async def delete_family(self, family_id: UUID) -> None:
+        """Erase the family and every personal row, including funnel events (their FKs SET NULL)."""
+        # Lock the family first: an event committed between the two DELETEs would be left unlinked.
+        await self._conn.execute(
+            text("SELECT 1 FROM families WHERE id = :id FOR UPDATE"), {"id": family_id}
+        )
+        await self._conn.execute(
+            text(
+                "DELETE FROM events WHERE family_id = :id"
+                " OR member_id IN (SELECT id FROM members WHERE family_id = :id)"
+            ),
+            {"id": family_id},
+        )
+        await self._conn.execute(text("DELETE FROM families WHERE id = :id"), {"id": family_id})

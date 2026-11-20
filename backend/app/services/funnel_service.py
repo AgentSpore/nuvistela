@@ -6,6 +6,7 @@ from app.domain.family import Member
 from app.domain.funnel import ALLOWED_PROPS, RETURN_DAYS, EventKind, FunnelStep
 from app.repositories.funnel_repository import FunnelRepository
 from app.schemas.funnel import LandingEventRequest, WaitlistRequest
+from app.services.pilot_service import PilotService
 
 
 class _DayMemo:
@@ -29,8 +30,9 @@ class FunnelService:
 
     _checked_today = _DayMemo()
 
-    def __init__(self, repo: FunnelRepository) -> None:
+    def __init__(self, repo: FunnelRepository, pilot: PilotService) -> None:
         self._repo = repo
+        self._pilot = pilot
 
     async def record_event(
         self,
@@ -61,6 +63,8 @@ class FunnelService:
                 "locale": body.locale,
             }
             await self.record_event(EventKind.WAITLIST_JOIN, props=props)
+            if body.attribution is not None:
+                await self._pilot.record_lead(body.attribution, body.locale)
 
     async def note_activity(self, member: Member) -> None:
         """Write member_first_seen, then return_d1 / return_d7 on exactly that UTC calendar day.

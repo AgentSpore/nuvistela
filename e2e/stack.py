@@ -71,6 +71,20 @@ def count_rows(url: str, table: str) -> int:
         return pool.submit(lambda: asyncio.run(count())).result()
 
 
+def run_sql(url: str, sql: str, *args: object) -> list[asyncpg.Record]:
+    """Run one statement against the suite's Postgres (seeding what no API creates, e.g. a cover picture)."""
+
+    async def run() -> list[asyncpg.Record]:
+        conn = await asyncpg.connect(url)
+        try:
+            return await conn.fetch(sql, *args)
+        finally:
+            await conn.close()
+
+    with ThreadPoolExecutor(1) as pool:
+        return pool.submit(lambda: asyncio.run(run())).result()
+
+
 async def _migrate(url: str) -> None:
     conn = await asyncpg.connect(url)
     try:
@@ -137,6 +151,9 @@ def _compile_frontend(env: dict[str, str]) -> None:
         STANDALONE / ".next" / "static",
         dirs_exist_ok=True,
     )
+    shutil.copytree(
+        ROOT / "frontend" / "public", STANDALONE / "public", dirs_exist_ok=True
+    )
 
 
 @contextmanager
@@ -153,6 +170,8 @@ def running_stack() -> Generator[Stack]:
                 **base_env,
                 "DATABASE_URL": url.replace("postgresql://", "postgresql+asyncpg://"),
                 "PORT": str(be_port),
+                # The suite creates more than the default 60 families a day; admission tests set their own cap.
+                "MAX_NEW_FAMILIES_PER_DAY": "0",
                 "PYTHONPATH": str(ROOT / "backend"),
             }
             cmd = [

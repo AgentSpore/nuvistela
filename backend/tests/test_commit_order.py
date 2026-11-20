@@ -33,7 +33,8 @@ async def test_family_is_committed_before_response_starts(postgres_url: str, age
     async with app.router.lifespan_context(app):
         async with AsyncClient(transport=ASGITransport(app=observer), base_url="http://t") as c:
             resp = await c.post(
-                "/api/v1/families", json={"title": "T", "display_name": "CommitProbe"}
+                "/api/v1/families",
+                json={"title": "T", "display_name": "CommitProbe", "privacy_consent": True},
             )
     assert resp.status_code == 201
     assert observer.visible == 1

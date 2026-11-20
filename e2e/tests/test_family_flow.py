@@ -20,15 +20,15 @@ ADULT, CHILD = "Anna", "Misha"
 flow: dict[str, Any] = {}
 
 
-def fill_family_form(page: Page, labels: tuple[str, str, str], title: str) -> str:
-    """Fill the /new form and return the creator's invite link as shown on the page."""
+def fill_family_form(page: Page, labels: tuple[str, str, str], title: str) -> None:
+    """Fill the /new form; a lone creator is led to the world, with no invite links shown."""
     family_label, name_label, submit = labels
     page.get_by_label(family_label).fill(title)
     page.get_by_label(name_label).fill(ADULT)
+    page.get_by_role("checkbox").check()
     page.get_by_role("button", name=submit, exact=True).click()
-    link = page.get_by_role("textbox", name=ADULT)
-    expect(link).to_be_visible()
-    return link.input_value()
+    expect(page.locator('#main a[href$="/adventure"]')).to_be_visible()
+    expect(page.get_by_role("textbox", name=ADULT)).to_have_count(0)
 
 
 def test_health_reports_ready_agent(stack: Stack) -> None:
@@ -37,21 +37,21 @@ def test_health_reports_ready_agent(stack: Stack) -> None:
     assert r.json() == {"status": "ok", "db": "ok", "agent": "ready"}
 
 
-def test_create_family_shows_creator_link_and_session(
+def test_create_family_leads_to_world_and_keeps_session(
     new_page: NewPage, shot: Shot
 ) -> None:
     page = new_page()
     page.goto("/new")
-    link = fill_family_form(
-        page, ("Название семьи", "Ваше имя", "Создать семью"), "Smith"
-    )
-    assert "/join#" in link and "/en/" not in link, link
+    fill_family_form(page, ("Название игры", "Ваше имя", "Продолжить"), "Smith")
     shot(page, "01-new-family-created")
+    page.get_by_role("link", name="Перейти к игре").click()
+    page.wait_for_url("**/adventure")
+    expect(page.get_by_role("heading", name="Придумайте свой мир")).to_be_visible()
     cookies = page.context.cookies()
     assert [c for c in cookies if c["httpOnly"]], f"no session cookie in {cookies}"
     flow["creator"] = page.context.storage_state()
     page.goto("/play")  # the session works: the roster is behind it
-    expect(page.get_by_role("list", name="Семья").get_by_text(ADULT)).to_be_visible()
+    expect(page.get_by_role("list", name="Участники").get_by_text(ADULT)).to_be_visible()
 
 
 def test_add_child_shows_child_invite_link(new_page: NewPage, shot: Shot) -> None:
@@ -59,11 +59,12 @@ def test_add_child_shows_child_invite_link(new_page: NewPage, shot: Shot) -> Non
     page.goto("/family")
     expect(page.get_by_role("heading", name="Добавить участника")).to_be_visible()
     page.get_by_label("Имя", exact=True).fill(CHILD)
+    page.get_by_label("Возраст", exact=True).select_option("6-9")
     page.get_by_role("button", name="Добавить", exact=True).click()
     link = page.get_by_role("textbox", name=f"Ссылка для входа: {CHILD}")
     expect(link).to_be_visible()
     flow["child_link"] = link.input_value()
-    assert "/join#" in flow["child_link"]
+    assert "/join#" in flow["child_link"] and "/en/" not in flow["child_link"], flow["child_link"]
     shot(page, "02-child-invite-link")
 
 
@@ -72,11 +73,11 @@ def test_child_opens_link_once_then_it_is_invalid(
 ) -> None:
     page = new_page()
     page.goto(flow["child_link"])
-    page.wait_for_url("**/play")
+    page.wait_for_url("**/adventure")
     assert "#" not in page.url, page.url
-    expect(page.get_by_role("list", name="Семья").get_by_text(CHILD)).to_be_visible()
+    expect(page.get_by_text(f"{ADULT} выбирает ваш мир — скоро начнём!")).to_be_visible()
     flow["child"] = page.context.storage_state()
-    shot(page, "03-child-landed-on-play")
+    shot(page, "03-child-waits-for-world")
 
     again = new_page()
     again.goto(flow["child_link"])
@@ -110,7 +111,7 @@ def test_family_roster_lists_both_and_adult_controls(
 ) -> None:
     page = new_page(flow["creator"])
     page.goto("/family")
-    expect(page.get_by_role("heading", name="Семья", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name="Участники", exact=True)).to_be_visible()
     for name in (ADULT, CHILD):
         expect(page.get_by_role("listitem").filter(has_text=name).first).to_be_visible()
     expect(page.get_by_role("button", name=f"Новая ссылка: {CHILD}")).to_be_visible()
@@ -145,11 +146,11 @@ def test_english_family_gets_english_invite_and_pages(
 ) -> None:
     page = new_page()
     page.goto("/en/new")
-    link = fill_family_form(
-        page, ("Family name", "Your name", "Create family"), "Jones"
-    )
-    assert "/en/join#" in link, link
+    fill_family_form(page, ("Name your game", "Your name", "Continue"), "Jones")
+    expect(page.get_by_role("link", name="Go to the game")).to_be_visible()
+    page.get_by_role("button", name="Add a player", exact=True).click()
     page.get_by_label("Name", exact=True).fill("Sam")
+    page.get_by_label("Age", exact=True).select_option("6-9")
     page.get_by_role("button", name="Add", exact=True).click()
     child_link = page.get_by_role("textbox", name="Sign-in link for Sam")
     expect(child_link).to_be_visible()
@@ -159,9 +160,11 @@ def test_english_family_gets_english_invite_and_pages(
 
     kid = new_page()
     kid.goto(url)
-    kid.wait_for_url("**/en/play")
+    kid.wait_for_url("**/en/adventure")
+    expect(kid.get_by_text(f"{ADULT} is choosing your world — we’ll begin soon!")).to_be_visible()
+    kid.goto("/en/play")
     expect(kid.get_by_label("Message to the game master")).to_be_visible()
-    expect(kid.get_by_text("Write the game master your first message.")).to_be_visible()
+    expect(kid.get_by_role("button", name="Make up a riddle")).to_be_visible()
     shot(kid, "09-en-play")
 
     stale = new_page()

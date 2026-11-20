@@ -3,12 +3,19 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { acceptInvite, ApiError } from "@/lib/api";
+import { admissionKey } from "@/lib/errors";
 import { buttonClass } from "@/components/ui/button";
 
 /** 401: invalid, expired or used token; 422: malformed (e.g. oversized) token. */
 const REJECTED = new Set([401, 422]);
 
-type State = "working" | "invalid" | "failed";
+type State = "working" | "invalid" | "failed" | "rateLimited";
+
+/** The server refuses new sign-ins from this address for a while; the invite stays unused. */
+function failureState(e: unknown): State {
+  if (admissionKey(e) === "rateLimited") return "rateLimited";
+  return e instanceof ApiError && REJECTED.has(e.status) ? "invalid" : "failed";
+}
 
 /** Consumes the invite token from the URL fragment: a POST, so link previews cannot burn it. */
 export function Join() {
@@ -30,12 +37,30 @@ export function Join() {
       ? acceptInvite(token)
       : Promise.reject(new ApiError("http", 401));
     attempt.then(
-      () => router.replace("/play"),
-      (e: unknown) =>
-        setState(e instanceof ApiError && REJECTED.has(e.status) ? "invalid" : "failed"),
+      () => router.replace("/adventure"),
+      (e: unknown) => setState(failureState(e)),
     );
   }, [router]);
 
+  return (
+    <>
+      <JoinState state={state} />
+      <p className="mt-6 text-center text-sm text-muted">
+        {t.rich("consent", {
+          policy: (chunks) => (
+            <Link href="/privacy" className="underline underline-offset-2">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
+    </>
+  );
+}
+
+function JoinState({ state }: { state: State }) {
+  const t = useTranslations("join");
+  const te = useTranslations("errors");
   if (state === "working")
     return (
       <div role="status" className="flex flex-col items-center gap-4 pt-10 text-center">
@@ -54,7 +79,7 @@ export function Join() {
       <h1 className="font-display text-2xl font-semibold">
         {t(state === "invalid" ? "invalidTitle" : "failedTitle")}
       </h1>
-      <p className="mt-2 text-muted">{t(state)}</p>
+      <p className="mt-2 text-muted">{state === "rateLimited" ? te(state) : t(state)}</p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href="/new"

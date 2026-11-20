@@ -1,6 +1,6 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, usePathname } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { focusRing } from "@/components/styles";
 
@@ -8,25 +8,24 @@ export function LocaleSwitcher() {
   const t = useTranslations("locale");
   const current = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
   return (
-    <nav
-      aria-label={t("label")}
-      className="flex rounded-full border border-line bg-card p-0.5"
-    >
-      {routing.locales.map((locale) => (
-        <Link
-          key={locale}
-          href={pathname}
-          locale={locale}
-          lang={locale}
-          hrefLang={locale}
-          aria-current={locale === current ? "true" : undefined}
-          aria-label={`${locale.toUpperCase()}, ${t(locale)}`}
-          className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-full px-2 text-sm font-semibold uppercase text-muted transition-colors duration-150 hover:text-ink aria-[current=true]:bg-honey aria-[current=true]:text-honey-ink ${focusRing}`}
-        >
-          <span aria-hidden="true">{locale}</span>
-        </Link>
-      ))}
-    </nav>
+    <label className="shrink-0">
+      <span className="sr-only">{t("label")}</span>
+      <select
+        value={current}
+        onChange={(event) => {
+          const locale = routing.locales.find((item) => item === event.target.value);
+          if (locale) router.replace(pathname, { locale });
+        }}
+        className={`min-h-11 max-w-32 rounded-full border border-line bg-card px-3 text-sm font-semibold text-ink ${focusRing}`}
+      >
+        {routing.locales.map((locale) => (
+          <option key={locale} value={locale} lang={locale}>
+            {t(locale)}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

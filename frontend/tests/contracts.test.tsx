@@ -16,6 +16,10 @@ vi.mock("@/lib/api", async (orig) => ({
   sendAgentMessage: vi.fn(),
   issueTelegramCode: vi.fn(),
 }));
+vi.mock("@/i18n/navigation", async (orig) => ({
+  ...(await orig<typeof import("@/i18n/navigation")>()),
+  useRouter: () => ({ replace: vi.fn() }),
+}));
 const m = vi.mocked(api);
 const http = (status: number) => new api.ApiError("http", status);
 
@@ -57,7 +61,7 @@ describe("status mapping for the game master", () => {
 
   it.each([
     [409, "Ведущий ещё отвечает"],
-    [429, "Дневной лимит вашей семьи исчерпан"],
+    [429, "Дневной лимит исчерпан"],
     [503, "Ведущий сейчас недоступен"],
   ])(
     "shows a human message for %i and returns the text to the box",

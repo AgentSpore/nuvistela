@@ -1,9 +1,10 @@
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from app.domain.family import AgeBand, Member, NewMember, Role
+from app.domain.family import AgeBand, AppLocale, Member, NewMember, Role
+from app.schemas.pilot import PilotAttribution
 
 DisplayName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
 Interest = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=30)]
@@ -12,9 +13,13 @@ Interests = Annotated[list[Interest], Field(max_length=10)]
 
 class CreateFamilyRequest(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
-    locale: Annotated[str, StringConstraints(pattern="^(ru|en)$")] = "ru"
+    locale: AppLocale = "ru"
     display_name: DisplayName
     interests: Interests = []
+    privacy_consent: Literal[
+        True
+    ]  # quality-gate: field-read-externally (pydantic rejects non-true with 422)
+    attribution: PilotAttribution | None = None
 
 
 class AddMemberRequest(BaseModel):

@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 from uuid import UUID
+
+AppLocale = Literal["ru", "en", "es", "zh-CN"]
+
+# Text version the family owner consents to; bump together with the policy page.
+PRIVACY_POLICY_VERSION = "2026-11-18"
 
 
 class AgeBand(StrEnum):

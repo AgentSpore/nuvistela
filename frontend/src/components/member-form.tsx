@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
-import { addMember, AGE_BANDS, ROLES, type Invite } from "@/lib/api";
+import { addMember, AGE_BANDS, type Invite } from "@/lib/api";
 import { errorKey } from "@/lib/errors";
 import { check, memberInputSchema, parseInterests, type FieldErrors } from "@/lib/forms";
 import { showErrors, SelectField, TextField } from "@/components/fields";
@@ -13,10 +13,12 @@ type Props = { familyId: string; onAdded: (invite: Invite) => void };
 const FIELD_IDS = {
   display_name: "m-name",
   age_band: "m-band",
-  role: "m-role",
   interests: "m-interests",
 };
-const EMPTY = { name: "", band: "6-9", role: "child", interests: "" };
+const EMPTY = { name: "", band: "adult", interests: "" };
+
+// INVARIANT: the API only accepts the adult role for the adult band, so role is derived, never asked.
+const roleFor = (band: string) => (band === "adult" ? "adult" : "child");
 
 export function MemberForm({ familyId, onAdded }: Props) {
   const t = useTranslations("member");
@@ -25,19 +27,14 @@ export function MemberForm({ familyId, onAdded }: Props) {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const set = (k: keyof typeof v) => (val: string) =>
-    setV((p) => ({
-      ...p,
-      [k]: val,
-      ...(k === "band" && { role: val === "adult" ? "adult" : "child" }),
-    }));
+  const set = (k: keyof typeof v) => (val: string) => setV((p) => ({ ...p, [k]: val }));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     const r = check(memberInputSchema, {
       display_name: v.name,
       age_band: v.band,
-      role: v.role,
+      role: roleFor(v.band),
       interests: parseInterests(v.interests),
     });
     if (!r.ok) return showErrors(setErrors, r.errors, FIELD_IDS);
@@ -66,24 +63,14 @@ export function MemberForm({ familyId, onAdded }: Props) {
         maxLength={40}
         error={err("display_name")}
       />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField
-          id="m-band"
-          label={t("band")}
-          value={v.band}
-          onChange={set("band")}
-          error={err("age_band")}
-          options={AGE_BANDS.map((b) => ({ value: b, label: t(`bands.${b}`) }))}
-        />
-        <SelectField
-          id="m-role"
-          label={t("role")}
-          value={v.role}
-          onChange={set("role")}
-          error={err("role")}
-          options={ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))}
-        />
-      </div>
+      <SelectField
+        id="m-band"
+        label={t("band")}
+        value={v.band}
+        onChange={set("band")}
+        error={err("age_band")}
+        options={AGE_BANDS.map((b) => ({ value: b, label: t(`bands.${b}`) }))}
+      />
       <TextField
         id="m-interests"
         label={t("interests")}

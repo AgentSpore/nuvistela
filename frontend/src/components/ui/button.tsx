@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 import { focusRing } from "@/components/styles";
 
 export type Variant = "primary" | "ghost" | "quiet";
@@ -14,7 +14,10 @@ const VARIANT: Record<Variant, string> = {
 export const buttonClass = (variant: Variant = "primary", extra = ""): string =>
   `${BASE} ${VARIANT[variant]} ${extra}`.trim();
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant };
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant;
+  ref?: Ref<HTMLButtonElement>;
+};
 
 export function Button({ variant = "primary", className = "", type, ...rest }: Props) {
   return (

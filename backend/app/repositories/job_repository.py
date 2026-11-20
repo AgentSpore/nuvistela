@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import text
@@ -93,4 +93,22 @@ class JobRepository:
                 "error": error,
                 "retry": retry_in,
             },
+        )
+
+    async def defer(self, job: Job, until: datetime) -> bool:
+        """Put the job back to run at `until`; not a failure, so `last_error` stays untouched."""
+        return await self._finish(
+            "UPDATE jobs SET status = 'pending', locked_at = NULL, next_run_at = :until"
+            " WHERE id = :id AND status = 'running' AND attempts = :attempts",
+            {"id": job.id, "attempts": job.attempts, "until": until},
+        )
+
+    async def defer_unpaid(self, job: Job) -> bool:
+        """Hand the job back until the next UTC midnight without using up its attempt."""
+        return await self._finish(
+            "UPDATE jobs SET status = 'pending', locked_at = NULL, attempts = attempts - 1,"
+            " next_run_at = (date_trunc('day', now() AT TIME ZONE 'UTC') + interval '1 day')"
+            " AT TIME ZONE 'UTC'"
+            " WHERE id = :id AND status = 'running' AND attempts = :attempts",
+            {"id": job.id, "attempts": job.attempts},
         )

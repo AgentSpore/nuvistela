@@ -1,0 +1,42 @@
+{
+  "en": [
+    ["The hidden sign", "Find three round things at home and tell what they are for.", "noticing"],
+    ["The secret code", "Invent a secret code of five symbols and write a short note in it for someone.", "creativity"],
+    ["The map of the house", "Sketch a map of one room and mark a secret spot on it.", "planning"],
+    ["The brave helper", "Do one small helpful thing for someone without being asked.", "kindness"],
+    ["Sounds of the night", "Listen for a minute and write down three sounds you heard.", "attention"],
+    ["The lost word", "Invent a new word and explain what it means to someone.", "language"],
+    ["A tiny feast", "Set a small table for a snack that is already prepared: lay out a plate and a napkin, then enjoy it slowly or share it with someone.", "care"],
+    ["The long way round", "Tell someone about one thing that was hard today.", "courage"]
+  ],
+  "ru": [
+    ["Тайный знак", "Найдите дома три круглых предмета и расскажите, для чего они нужны.", "наблюдательность"],
+    ["Тайный шифр", "Придумайте тайный шифр из пяти знаков и напишите им короткую записку для кого-нибудь.", "творчество"],
+    ["Карта дома", "Нарисуйте карту одной комнаты и отметьте на ней тайное место.", "планирование"],
+    ["Смелый помощник", "Сделайте для кого-нибудь одно полезное дело без просьбы.", "доброта"],
+    ["Звуки ночи", "Послушайте тишину минуту и запишите три услышанных звука.", "внимание"],
+    ["Потерянное слово", "Придумайте новое слово и объясните кому-нибудь, что оно значит.", "речь"],
+    ["Маленький пир", "Накройте маленький стол для готового перекуса: поставьте тарелку и салфетку, а потом не спеша съешьте его или поделитесь с кем-нибудь.", "забота"],
+    ["Дорога в обход", "Расскажите кому-нибудь об одном трудном моменте сегодняшнего дня.", "смелость"]
+  ],
+  "es": [
+    ["La señal escondida", "Buscar en casa tres cosas redondas y contar para qué sirven.", "observación"],
+    ["El código secreto", "Inventar un código secreto de cinco símbolos y escribir con él una nota breve para alguien.", "creatividad"],
+    ["El mapa de la casa", "Dibujar el mapa de una habitación y marcar en él un lugar secreto.", "planificación"],
+    ["El valiente ayudante", "Hacer algo pequeño y útil por alguien sin que nadie lo pida.", "bondad"],
+    ["Sonidos de la noche", "Escuchar durante un minuto y anotar tres sonidos que se oigan.", "atención"],
+    ["La palabra perdida", "Inventar una palabra nueva y explicar a alguien qué significa.", "lenguaje"],
+    ["Un pequeño festín", "Poner una mesa pequeña para un tentempié ya preparado: colocar un plato y una servilleta, y luego disfrutarlo despacio o compartirlo con alguien.", "cuidado"],
+    ["El camino largo", "Contar a alguien una cosa que resultó difícil hoy.", "valentía"]
+  ],
+  "zh-CN": [
+    ["隐藏的标记", "在家里找三样圆形的东西，说说它们是做什么用的。", "观察"],
+    ["秘密暗号", "编一个由五个符号组成的秘密暗号，用它给某人写一张小纸条。", "创造力"],
+    ["房间地图", "画一张房间的地图，并在上面标出一个秘密角落。", "规划"],
+    ["勇敢的帮手", "不用别人开口，主动为某人做一件力所能及的小好事。", "善良"],
+    ["夜晚的声音", "安静地听一分钟，把听到的三种声音写下来。", "专注"],
+    ["遗失的词", "编一个新词，并向某人解释它的意思。", "语言"],
+    ["小小盛宴", "为已经准备好的点心摆一张小桌：放好盘子和餐巾，然后慢慢享用，或与某人分享。", "关怀"],
+    ["绕远的路", "向某人讲讲今天遇到的一件难事。", "勇气"]
+  ]
+}

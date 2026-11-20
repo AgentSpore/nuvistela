@@ -13,10 +13,14 @@ class EventKind(StrEnum):
     MEMBER_FIRST_SEEN = "member_first_seen"
     RETURN_D1 = "return_d1"
     RETURN_D7 = "return_d7"
+    REMINDER_SENT = "reminder_sent"
+    REMINDER_OPENED = "reminder_opened"
 
 
 # Whitelist behind F-1: anything else (email, names, message text) is refused at the write.
-ALLOWED_PROPS = frozenset({"locale", "utm_source", "family_size", "kids_age_bands"})
+ALLOWED_PROPS = frozenset(
+    {"locale", "utm_source", "family_size", "kids_age_bands", "kind", "channel"}
+)
 
 RETURN_DAYS = {1: EventKind.RETURN_D1, 7: EventKind.RETURN_D7}
 

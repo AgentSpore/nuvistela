@@ -49,7 +49,7 @@ async def test_link_with_valid_code_binds_chat(tg, sender, db_fetch) -> None:
     resp = await link(tg, code, 1)
     assert resp.status_code == 200
     assert await chat_family(db_fetch) == family_id
-    assert [s.text for s in sender.sent] == ["connected"]
+    assert [s.text for s in sender.sent] == ["Чат подключён."]
     assert sender.sent[0].reply_to == 10
 
 
@@ -120,7 +120,10 @@ async def test_two_concurrent_links_with_one_code_bind_exactly_once(tg, sender, 
     await runner_of(tg).drain()
     bound = [await chat_family(db_fetch, c) for c in (-301, -302)]
     assert sorted(b is not None for b in bound) == [False, True]
-    assert sorted(s.text for s in sender.sent) == ["code invalid or expired", "connected"]
+    assert sorted(s.text for s in sender.sent) == [
+        "code invalid or expired",  # the losing chat stays unlinked: sender language
+        "Чат подключён.",
+    ]
 
 
 async def test_duplicate_update_id_is_processed_once(tg, sender) -> None:
@@ -197,7 +200,7 @@ async def test_too_long_text_gets_fixed_reply_and_no_turn(tg, sender, agent) -> 
     rec = Recorder()
     with agent.override(model=FunctionModel(rec)):
         await post_update(tg, update(2, f"@{BOT.username} " + "x" * 2001))
-    assert [s.text for s in sender.sent] == ["message too long (max 2000 characters)"]
+    assert [s.text for s in sender.sent] == ["Сообщение слишком длинное (не больше 2000 символов)."]
     assert rec.seen == []
 
 
@@ -215,7 +218,7 @@ async def test_budget_exceeded_maps_to_fixed_reply(tg, sender, agent) -> None:
 
     with agent.override(model=FunctionModel(over)):
         await post_update(tg, update(2, f"@{BOT.username} hi"))
-    assert [s.text for s in sender.sent] == ["daily limit reached"]
+    assert [s.text for s in sender.sent] == ["На сегодня лимит исчерпан."]
 
 
 async def test_unavailable_model_maps_to_fixed_reply_without_internals(tg, sender, agent) -> None:
@@ -226,7 +229,7 @@ async def test_unavailable_model_maps_to_fixed_reply_without_internals(tg, sende
 
     with agent.override(model=FunctionModel(down)):
         await post_update(tg, update(2, f"@{BOT.username} hi"))
-    assert [s.text for s in sender.sent] == ["game master unavailable"]
+    assert [s.text for s in sender.sent] == ["Ведущий сейчас недоступен."]
 
 
 async def test_busy_family_maps_to_wait_reply(tg, sender, agent) -> None:
@@ -249,7 +252,7 @@ async def test_busy_family_maps_to_wait_reply(tg, sender, agent) -> None:
             headers={"X-Telegram-Bot-Api-Secret-Token": "hook-secret"},
         )
         await runner_of(tg).drain()
-    assert sorted(s.text for s in sender.sent) == ["done", "wait, I'm still answering"]
+    assert sorted(s.text for s in sender.sent) == ["done", "Подождите, я ещё отвечаю."]
 
 
 async def test_shutdown_cancels_unfinished_tasks(tg, sender, agent) -> None:

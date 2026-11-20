@@ -1,10 +1,11 @@
-import { act, renderHook, screen, waitFor } from "@testing-library/react";
+import { act, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Join } from "@/components/join";
 import { FamilyView } from "@/components/family-view";
 import { InviteLink } from "@/components/invite-link";
+import { MemberForm } from "@/components/member-form";
 import { NewFamily } from "@/components/new-family";
 import { Play } from "@/components/play";
 import * as api from "@/lib/api";
@@ -19,6 +20,7 @@ vi.mock("@/lib/api", async (orig) => ({
   createFamily: vi.fn(),
   reissueInvite: vi.fn(),
   acceptInvite: vi.fn(),
+  addMember: vi.fn(),
 }));
 const replace = vi.hoisted(() => vi.fn());
 vi.mock("@/i18n/navigation", async (orig) => ({
@@ -76,29 +78,150 @@ describe("/family", () => {
   });
 });
 
+const CONSENT = /Я родитель или законный представитель/;
+const consent = () => userEvent.click(screen.getByRole("checkbox", { name: CONSENT }));
+
 describe("/new", () => {
   it("focuses the first invalid field after a failed submit", async () => {
     renderRu(<NewFamily />);
-    await userEvent.click(screen.getByRole("button", { name: "Создать семью" }));
-    await waitFor(() => expect(screen.getByLabelText("Название семьи")).toHaveFocus());
+    await consent();
+    await userEvent.click(screen.getByRole("button", { name: "Продолжить" }));
+    await waitFor(() => expect(screen.getByLabelText("Название игры")).toHaveFocus());
   });
 
-  it("keeps the creator's link and shows the add form after creation", async () => {
+  it.each([
+    ["rate_limited", "Слишком много попыток, попробуйте через час"],
+    ["daily_full", "Сегодня все места заняты — приходите завтра"],
+  ])("tells a warm story for the refusal %s", async (code, text) => {
+    m.createFamily.mockRejectedValue(new api.ApiError("http", 429, code));
+    renderRu(<NewFamily />);
+    await userEvent.type(screen.getByLabelText("Название игры"), "Ивановы");
+    await userEvent.type(screen.getByLabelText("Ваше имя"), "Анна");
+    await consent();
+    await userEvent.click(screen.getByRole("button", { name: "Продолжить" }));
+    expect(await screen.findByText(text)).toBeVisible();
+  });
+
+  it("hides a lone creator's link and the add form after creation", async () => {
     m.createFamily.mockResolvedValue({
       family_id: "f1",
       member: member(),
       invite_url: "/api/v1/invite/t1",
     });
     renderRu(<NewFamily />);
-    await userEvent.type(screen.getByLabelText("Название семьи"), "Ивановы");
+    await userEvent.type(screen.getByLabelText("Название игры"), "Ивановы");
     await userEvent.type(screen.getByLabelText("Ваше имя"), "Анна");
-    await userEvent.click(screen.getByRole("button", { name: "Создать семью" }));
-    expect(await screen.findByLabelText("Ссылка для входа: Анна")).toHaveValue(
-      `${window.location.origin}/api/v1/invite/t1`,
-    );
+    await consent();
+    await userEvent.click(screen.getByRole("button", { name: "Продолжить" }));
+    expect(await screen.findByRole("link", { name: "Перейти к игре" })).toBeVisible();
+    expect(screen.queryByLabelText("Ссылка для входа: Анна")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Добавить участника" })).toBeNull();
+  });
+
+  it("makes the way into the game primary and reveals the member form on demand", async () => {
+    m.createFamily.mockResolvedValue({
+      family_id: "f1",
+      member: member(),
+      invite_url: "/api/v1/invite/t1",
+    });
+    renderRu(<NewFamily />);
+    await userEvent.type(screen.getByLabelText("Название игры"), "Ивановы");
+    await userEvent.type(screen.getByLabelText("Ваше имя"), "Анна");
+    await consent();
+    await userEvent.click(screen.getByRole("button", { name: "Продолжить" }));
+    const play = await screen.findByRole("link", { name: "Перейти к игре" });
+    expect(play).toHaveClass("btn-primary");
+    const add = screen.getByRole("button", { name: "Добавить участника" });
+    expect(add).not.toHaveClass("btn-primary");
+    await userEvent.click(add);
     expect(
       screen.getByRole("heading", { name: "Добавить участника" }),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText("Имя")).toHaveFocus();
+    expect(screen.queryByLabelText("Роль")).toBeNull();
+  });
+});
+
+describe("/new after creation", () => {
+  const create = async () => {
+    m.createFamily.mockResolvedValue({
+      family_id: "f1",
+      member: member(),
+      invite_url: "/api/v1/invite/t1",
+    });
+    renderRu(<NewFamily />);
+    await userEvent.type(screen.getByLabelText("Название игры"), "Ивановы");
+    await userEvent.type(screen.getByLabelText("Ваше имя"), "Анна");
+    await consent();
+    await userEvent.click(screen.getByRole("button", { name: "Продолжить" }));
+    await screen.findByRole("link", { name: "Перейти к игре" });
+  };
+  const current = () =>
+    within(screen.getByRole("list", { name: "Шаги" }))
+      .getAllByRole("listitem")
+      .find((li) => li.getAttribute("aria-current") === "step");
+
+  it("does not call the second step links when a lone player has none", async () => {
+    await create();
+    expect(current()).toHaveTextContent("Готово");
+    expect(screen.queryByText("Ссылки")).toBeNull();
+  });
+
+  it("collapses the member form after an addition and reopens it on demand", async () => {
+    await create();
+    m.addMember.mockResolvedValue({
+      member: member({ id: "m2", display_name: "Петя" }),
+      invite_url: "/api/v1/invite/t2",
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Добавить участника" }));
+    await userEvent.type(screen.getByLabelText("Имя"), "Петя");
+    await userEvent.click(screen.getByRole("button", { name: "Добавить" }));
+    const again = await screen.findByRole("button", { name: "Добавить ещё участника" });
+    expect(screen.queryByRole("heading", { name: "Добавить участника" })).toBeNull();
+    expect(again).toHaveFocus();
+    expect(
+      screen.getByText("Ссылка готова: Петя").closest('[role="status"]'),
+    ).not.toBeNull();
+    expect(current()).toHaveTextContent("Ссылки");
+    await userEvent.click(again);
+    expect(screen.getByLabelText("Имя")).toHaveValue("");
+  });
+
+  it("announces each addition, even of a second player with the same name", async () => {
+    await create();
+    const addPetya = async (id: string) => {
+      m.addMember.mockResolvedValueOnce({
+        member: member({ id, display_name: "Петя" }),
+        invite_url: `/api/v1/invite/${id}`,
+      });
+      await userEvent.click(
+        screen.getByRole("button", { name: /^Добавить (ещё )?участника$/ }),
+      );
+      await userEvent.type(screen.getByLabelText("Имя"), "Петя");
+      await userEvent.click(screen.getByRole("button", { name: "Добавить" }));
+      return screen.findByText("Ссылка готова: Петя");
+    };
+    const first = await addPetya("m2");
+    const second = await addPetya("m3");
+    expect(second).not.toBe(first);
+    expect(second.closest('[role="status"]')).not.toBeNull();
+  });
+});
+
+describe("member form derives the role from age", () => {
+  it.each([
+    ["adult", "adult"],
+    ["6-9", "child"],
+  ] as const)("age %s is sent with role %s", async (band, role) => {
+    m.addMember.mockResolvedValue({ member: member(), invite_url: "/api/v1/invite/t2" });
+    renderRu(<MemberForm familyId="f1" onAdded={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText("Имя"), "Маша");
+    await userEvent.selectOptions(screen.getByLabelText("Возраст"), band);
+    await userEvent.click(screen.getByRole("button", { name: "Добавить" }));
+    expect(m.addMember).toHaveBeenCalledWith(
+      "f1",
+      expect.objectContaining({ age_band: band, role }),
+    );
   });
 });
 
@@ -176,13 +299,14 @@ describe("useMembers", () => {
 describe("errors reach assistive tech before focus", () => {
   it("field is already described by its error when it receives focus", async () => {
     renderRu(<NewFamily />);
-    const field = screen.getByLabelText("Название семьи");
+    await consent();
+    const field = screen.getByLabelText("Название игры");
     let seen: string | null = "unset";
     field.addEventListener(
       "focus",
       () => (seen = field.getAttribute("aria-describedby")),
     );
-    await userEvent.click(screen.getByRole("button", { name: "Создать семью" }));
+    await userEvent.click(screen.getByRole("button", { name: "Продолжить" }));
     expect(seen).toBe("f-title-err");
     expect(field).toHaveAccessibleDescription("Заполните это поле");
   });
@@ -218,7 +342,7 @@ describe("/join", () => {
       return member();
     });
     renderJoin();
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/play"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/adventure"));
     expect(hashAtCall).toBe("");
     await act(async () => {
       await new Promise((r) => setTimeout(r, 10));
@@ -247,6 +371,16 @@ describe("/join", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Попросите взрослого выпустить новую",
     );
+  });
+
+  it("says to wait when the address is rate limited, not a generic failure", async () => {
+    open("#tok");
+    m.acceptInvite.mockRejectedValue(new api.ApiError("http", 429, "rate_limited"));
+    renderJoin();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Слишком много попыток, попробуйте через час",
+    );
+    expect(window.location.hash).toBe("");
   });
 
   it.each([

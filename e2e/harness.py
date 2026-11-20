@@ -1,5 +1,6 @@
 """Pytest plugin (loaded with `-p harness`): the stack, browser and page fixtures."""
 
+import itertools
 import re
 from collections.abc import Callable, Iterator
 from pathlib import Path
@@ -14,6 +15,11 @@ from playwright.sync_api import (
 )
 
 from stack import Stack, running_stack
+
+# One address per context from 100.64.0.0/10 (carrier-grade NAT): never public, yet not private,
+# loopback or link-local for the backend's rightmost-non-private parser, so each browser gets its
+# own admission bucket instead of all sharing 127.0.0.1.
+_CLIENT_IPS = (f"100.64.{n // 250}.{n % 250 + 1}" for n in itertools.count())
 
 SHOTS = Path(__file__).resolve().parent / "artifacts" / "shots"
 
@@ -40,7 +46,11 @@ def new_page(browser: Browser, stack: Stack) -> Iterator[Callable[..., Page]]:
     contexts: list[BrowserContext] = []
 
     def make(state: StorageState | None = None) -> Page:
-        ctx = browser.new_context(base_url=stack.site, storage_state=state)
+        ctx = browser.new_context(
+            base_url=stack.site,
+            storage_state=state,
+            extra_http_headers={"X-Forwarded-For": next(_CLIENT_IPS)},
+        )
         contexts.append(ctx)
         return ctx.new_page()
 
